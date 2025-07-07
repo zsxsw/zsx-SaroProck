@@ -1,0 +1,30 @@
+---
+// src/components/layout/Hero.astro
+export interface Props {
+  siteDescription: string;
+}
+
+const { siteDescription } = Astro.props;
+---
+<section class="relative overflow-hidden bg-gradient-to-br from-base-100 via-base-200/30 to-base-300/20">
+    <div class="relative max-w-6xl mx-auto px-4 sm:px-6 py-12">
+    <div class="text-center max-w-2xl mx-auto">
+      <h1 class="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent leading-tight">
+        时光碎片
+      </h1>
+      <p class="text-base text-base-content/70 mb-6 leading-relaxed">
+        {siteDescription}
+      </p>
+      <div class="flex items-center justify-center space-x-4 text-sm text-base-content/60">
+        <div class="flex items-center space-x-1">
+          <i class="ri-map-pin-line text-primary text-sm"></i>
+          <span>数字世界</span>
+        </div>
+        <div class="flex items-center space-x-1">
+          <i class="ri-time-line text-primary text-sm"></i>
+          <span>持续更新</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
