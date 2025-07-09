@@ -4,39 +4,36 @@
     "type": "split",
     "children": [
       {
-        "id": "c47b057033a03ecc",
+        "id": "00742f10aff48f07",
         "type": "tabs",
         "children": [
           {
-            "id": "cc436322ba005ae9",
+            "id": "2b22f8b89f2a716a",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "rensheng-haihai-review.md",
+                "file": "city-walk.mdx",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "rensheng-haihai-review"
+              "title": "city-walk"
             }
           },
           {
-            "id": "496136c5c17b7b22",
+            "id": "e232f78b30060121",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "image",
               "state": {
-                "file": "Splay树（伸展树）.md",
-                "mode": "source",
-                "source": false
+                "file": "photo/city-walk/20250707_121959.webp"
               },
-              "icon": "lucide-file",
-              "title": "Splay树（伸展树）"
+              "icon": "lucide-image",
+              "title": "20250707_121959"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -183,15 +180,34 @@
       "command-palette:打开命令面板": false
     }
   },
-  "active": "496136c5c17b7b22",
+  "active": "2b22f8b89f2a716a",
   "lastOpenFiles": [
-    "birthday.md",
+    "photo/city-walk/20250707_121959.webp",
+    "photo/city-walk/20250707_122436.webp",
+    "city-walk.mdx",
+    "photo/city-walk/20250707_122916.webp",
+    "photo/city-walk/20250707_121951.webp",
+    "photo/city-walk/20250707_114344.webp",
+    "photo/city-walk/20250707_123007.webp",
+    "photo/city-walk/20250707_113041.webp",
+    "photo/city-walk/20250707_112001.webp",
+    "photo/city-walk/20250707_111854.webp",
+    "photo/city-walk/20250707_110849.webp",
+    "city-walk.md",
     "mains.md",
+    "().md",
+    "LIS与LCS（最长上升子序列）.md",
+    "photo/city-walk",
+    "photo",
+    "rensheng-haihai-review.md",
+    "2025-06-01.md",
+    "Splay树（伸展树）.md",
+    "未命名.md",
+    "birthday.md",
     "micawberism.md",
     "life-is-vast-errors-can-be-redone.md",
     "k阶常系数线性递推方程.md",
     "inner.md",
-    "rensheng-haihai-review.md",
     "生成函数在非常系数与非齐次的线性递推关系的应用.md",
     "emotion-confict.md",
     "diary.md",
@@ -203,13 +219,6 @@
     "dawn-blossoms-plucked-at-dusk.md",
     "gcd、exgcd、质数筛法、逆元与同余方程组复习笔记（已废弃）.md",
     "a-cat.md",
-    "ah-q.md",
-    "Brønsted–Lowry.md",
-    "2024-12-05.md",
-    "original-sin.md",
-    "under-the-sacred-hall.md",
-    "未命名.md",
-    "life-is-a-.md",
-    "new.md"
+    "ah-q.md"
   ]
 }

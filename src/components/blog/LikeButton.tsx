@@ -134,8 +134,8 @@ const BlogLikeButton: React.FC<Props> = ({ postId }) => {
   };
 
   const buttonStateClasses = hasLiked
-    ? 'btn-primary text-primary-content ring-primary/40' // 已点赞样式
-    : 'btn-outline border-base-content/20'; // 未点赞样式
+    ? 'btn-primary ring-primary/40' // 已点赞样式
+    : 'border-base-content/20'; // 未点赞样式
 
   if (isLoading) {
     return <div className="skeleton w-32 h-16 rounded-full"></div>

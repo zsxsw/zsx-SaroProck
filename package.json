@@ -61,6 +61,7 @@
     "eslint-plugin-format": "^1.0.1",
     "eslint-plugin-react": "^7.37.5",
     "sass": "^1.89.2",
-    "typescript-eslint": "^8.35.1"
+    "typescript-eslint": "^8.35.1",
+    "unist-util-visit": "^5.0.0"
   }
 }
