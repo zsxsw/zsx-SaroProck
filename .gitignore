@@ -26,4 +26,4 @@ pnpm-debug.log*
 .idea/
 
 # local photos
-src/content/blog/photo/
+public/photo/

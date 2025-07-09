@@ -5,7 +5,7 @@
   "license": "GPL-3.0",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "cpy 'src/content/blog/photo/**' public/photo && astro build",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint . --ext .js,.ts,.jsx,.tsx,.astro"
@@ -54,6 +54,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/canvas-confetti": "^1.9.0",
     "@typescript-eslint/parser": "^8.35.1",
+    "cpy-cli": "^5.0.0",
     "daisyui": "^5.0.46",
     "eslint": "^9.30.1",
     "eslint-config-prettier": "^10.1.5",
