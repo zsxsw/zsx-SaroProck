@@ -3,6 +3,26 @@ import type { CollectionEntry } from "astro:content";
 
 const cache = new Map<string, string>();
 
+/**
+ * [新增] 为非标字符串（如中文）生成一个简短、固定的哈希值
+ * @param input - The string to hash, e.g., "强连通分量"
+ * @returns A promise that resolves to a short hex string, e.g., "e8a11b2"
+ */
+async function generateShortHash(input: string): Promise<string> {
+  // 使用现代的 Web Crypto API
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+  
+  // 将哈希值转换为16进制字符串
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hexHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  // 返回哈希值的前7位，这足以在大多数情况下保证唯一性
+  return hexHash.substring(0, 7);
+}
+
+
 interface ShortLinkOptions {
   longUrl: string;
   slug?: CollectionEntry<'blog'>['slug'];
@@ -14,24 +34,34 @@ export async function getShortLink({ longUrl, slug }: ShortLinkOptions): Promise
     return cache.get(cacheKey)!;
   }
 
+  const publicUrl = import.meta.env.SINK_PUBLIC_URL;
   const apiEndpoint = import.meta.env.SINK_API_ENDPOINT;
   const apiKey = import.meta.env.SINK_API_KEY;
 
-  if (!apiEndpoint || !apiKey) {
+  if (!apiEndpoint || !apiKey || !publicUrl) {
     console.warn("Sink 服务环境变量未完全设置，无法生成短链。");
     return null;
   }
 
   try {
+    // --- 核心修复：重写请求体构建逻辑 ---
     const bodyPayload: { url: string; slug?: string } = {
         url: longUrl,
     };
 
     const sinkSlugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
     
-    if (slug && sinkSlugRegex.test(slug)) {
-      bodyPayload.slug = `blog-${slug}`;
+    if (slug) {
+      if (sinkSlugRegex.test(slug)) {
+        // 如果 slug 合规（英文/数字），直接使用
+        bodyPayload.slug = slug;
+      } else {
+        // 如果 slug 不合规（包含中文等），则为其生成一个固定的哈希值
+        const hashedSlug = await generateShortHash(slug);
+        bodyPayload.slug = hashedSlug;
+      }
     }
+    // 如果没有传入 slug，则不发送 slug 字段，让 Sink 服务自己生成随机 slug
 
     const response = await fetch(apiEndpoint, {
       method: 'POST',
@@ -42,7 +72,6 @@ export async function getShortLink({ longUrl, slug }: ShortLinkOptions): Promise
       body: JSON.stringify(bodyPayload),
     });
 
-    // 核心修改：现在我们接受所有 2xx 的成功状态码 (200 OK 或 201 Created)
     if (!response.ok) {
       const errorBody = await response.text();
       throw new Error(`Sink API request failed: ${response.status} - ${errorBody}`);
