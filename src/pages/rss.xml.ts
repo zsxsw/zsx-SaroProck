@@ -54,7 +54,7 @@ export async function GET(context: any) {
       <language>zh-CN</language>
       <atom:link href="${new URL(context.url.pathname, context.site)}" rel="self" type="application/rss+xml" />
       <image>
-        <url>${new URL('/favicon.ico', context.site).toString()}</url>
+        <url>${new URL('/favicon.png', context.site).toString()}</url>
         <title>サン猫の時間漂流</title>
         <link>${context.site}</link>
       </image>
