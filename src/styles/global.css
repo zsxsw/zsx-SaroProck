@@ -18,15 +18,15 @@
 }
 
 @font-face {
-  font-family: 'Maple';
-  src: url('/MapleMono-Regular.ttf.woff2') format('woff2');
+  font-family: "Maple";
+  src: url("/MapleMono-Regular.ttf.woff2") format("woff2");
   font-weight: 100 900;
   font-display: swap;
   font-style: normal;
 }
 
 code {
-  font-family: 'Maple', monospace;
+  font-family: "Maple", monospace;
   font-size: 0.875rem;
   line-height: 1.5;
 }
@@ -36,7 +36,7 @@ code {
 }
 
 .saro-code-toolbar {
-  @apply sticky top-0 z-10 flex justify-between items-center px-4 py-2 bg-base-200 border-b border-base-content/20
+  @apply sticky top-0 z-10 flex justify-between items-center px-4 py-2 bg-base-200 border-b border-base-content/20;
 }
 
 .saro-code-toolbar-language {
@@ -47,7 +47,7 @@ code {
   @apply overflow-x-auto bg-transparent rounded-none;
 }
 
-.saro-code-content > code >code {
+.saro-code-content > code > code {
   @apply rounded-none p-2;
   counter-reset: line;
 }

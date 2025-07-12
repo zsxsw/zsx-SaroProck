@@ -25,5 +25,6 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
-# local photos
+# local
 public/photo/
+src/content/blog/.obsidian

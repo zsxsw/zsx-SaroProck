@@ -22,7 +22,7 @@
     padding: 0 !important;
     margin: 0 !important;
   }
-  
+
   /* 确保文章内容本身有一些页边距 */
   .printable-article {
     max-width: 100% !important;
