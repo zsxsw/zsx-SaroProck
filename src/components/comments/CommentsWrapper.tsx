@@ -1,31 +1,9 @@
+// src/components/comments/CommentsWrapper.tsx
 import React, { useState, useEffect, useCallback } from "react";
-import * as AV from "leancloud-storage";
 import CommentList from "./CommentList";
 import CommentForm from "./CommentForm";
 
-// 正确的、仅在客户端执行一次的初始化逻辑
-let isLeanCloudInitialized = false;
-const initSDK = () => {
-  if (isLeanCloudInitialized || typeof window === 'undefined') return;
-  try {
-    const { PUBLIC_LEANCLOUD_APP_ID, PUBLIC_LEANCLOUD_APP_KEY, PUBLIC_LEANCLOUD_SERVER_URL } = import.meta.env;
-    if (PUBLIC_LEANCLOUD_APP_ID && PUBLIC_LEANCLOUD_APP_KEY && PUBLIC_LEANCLOUD_SERVER_URL) {
-      AV.init({
-        appId: PUBLIC_LEANCLOUD_APP_ID,
-        appKey: PUBLIC_LEANCLOUD_APP_KEY,
-        serverURL: PUBLIC_LEANCLOUD_SERVER_URL,
-      });
-      isLeanCloudInitialized = true;
-      console.log("LeanCloud SDK Initialized successfully inside useEffect.");
-    } else {
-      console.error("LeanCloud credentials are not set in environment variables.");
-    }
-  } catch (error) {
-    console.error("Error initializing LeanCloud SDK:", error);
-  }
-};
-
-// CommentData 接口定义
+// 接口定义保持不变
 export interface CommentData {
   id: string;
   nickname: string;
@@ -36,10 +14,12 @@ export interface CommentData {
   avatar: string;
   likes: number;
   isLiked: boolean;
+  parent?: { objectId: string };
   parentId?: string;
   level: number;
   commentType: 'blog' | 'telegram';
   identifier: string;
+  isAdmin?: boolean;
 }
 
 interface Props {
@@ -48,57 +28,57 @@ interface Props {
   displayMode?: 'full' | 'compact';
 }
 
+// 获取或生成一个唯一的设备ID，用于点赞身份识别
+const getDeviceId = (): string => {
+    const key = 'comment_device_id';
+    let deviceId = localStorage.getItem(key);
+    if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        localStorage.setItem(key, deviceId);
+    }
+    return deviceId;
+};
+
 const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode = 'full' }) => {
   const [comments, setComments] = useState<CommentData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sdkReady, setSdkReady] = useState(isLeanCloudInitialized);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
 
-  const leanCloudClassName = commentType === 'telegram' ? 'TelegramComment' : 'Comment';
-  const leanCloudLikeClassName = commentType === 'telegram' ? 'TelegramCommentLike' : 'CommentLike';
-
+  // 在组件挂载时获取设备ID
   useEffect(() => {
-    if (!sdkReady) {
-      initSDK();
-      setSdkReady(isLeanCloudInitialized);
-    }
+    setDeviceId(getDeviceId());
   }, []);
 
   const fetchComments = useCallback(async () => {
-    if (!sdkReady) {
-      setLoading(false);
-      return;
-    }
+    if (!deviceId) return; // 确保在有 deviceId 后再获取评论
     setLoading(true);
     try {
-      const query = new AV.Query(leanCloudClassName);
-      query.equalTo(commentType === 'telegram' ? 'postId' : 'slug', identifier);
-      query.addAscending("createdAt");
-      query.include("parent");
-      const results = await query.find();
-
-      const storedLikes = localStorage.getItem(`comment_likes_${identifier}`);
-      const userLikes = storedLikes ? new Set<string>(JSON.parse(storedLikes)) : new Set<string>();
+      const url = `/api/comments?identifier=${encodeURIComponent(identifier)}&commentType=${commentType}&deviceId=${deviceId}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch comments');
       
-      const likeQuery = new AV.Query(leanCloudLikeClassName);
-      likeQuery.containedIn('commentId', results.map(c => c.id!));
-      const likes = await likeQuery.find();
-      const likeCounts = likes.reduce((acc, like) => {
-        const commentId = like.get('commentId');
-        if(commentId) acc[commentId] = (acc[commentId] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      const results = await response.json();
 
       const commentMap = new Map<string, CommentData & { children: CommentData[] }>();
       
-      results.forEach(c => {
-        if (!c.id) return;
-        commentMap.set(c.id, {
-          id: c.id, nickname: c.get('nickname'), email: c.get('email'),
-          website: c.get('website'), content: c.get('content'),
-          createdAt: c.createdAt!, avatar: c.get('avatar'),
-          likes: likeCounts[c.id] || 0, isLiked: userLikes.has(c.id),
-          parentId: c.get('parent')?.id, level: 0, children: [],
-          commentType: commentType, identifier: identifier,
+      results.forEach((c: any) => {
+        const commentId = c.id || c.objectId; // 兼容
+        commentMap.set(commentId, {
+          id: commentId,
+          nickname: c.nickname,
+          email: c.email,
+          website: c.website,
+          content: c.content,
+          createdAt: new Date(c.createdAt),
+          avatar: c.avatar,
+          likes: c.likes || 0,
+          isLiked: c.isLiked || false,
+          parentId: c.parent?.objectId,
+          level: 0,
+          children: [],
+          commentType: commentType,
+          identifier: identifier,
+          isAdmin: c.isAdmin || false,
         });
       });
       
@@ -120,63 +100,82 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
         children.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
         children.forEach(flatten);
       }
-      rootComments.forEach(flatten);
+      rootComments.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).forEach(flatten);
 
       setComments(flattenedComments);
+
     } catch (error) {
       console.error("Error fetching comments:", error);
     } finally {
       setLoading(false);
     }
-  }, [sdkReady, identifier, commentType, leanCloudClassName]);
+  }, [identifier, commentType, deviceId]);
 
   useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
+    if(deviceId) { // 确保 deviceId 存在时才执行
+        fetchComments();
+    }
+  }, [deviceId, fetchComments]);
 
   const handleCommentAdded = useCallback(() => {
-    setTimeout(() => { fetchComments(); }, 500);
+    setTimeout(() => {
+      fetchComments();
+    }, 500);
   }, [fetchComments]);
 
   const handleLike = useCallback(async (commentId: string) => {
-    if (!sdkReady) return;
-    
-    const user = AV.User.current(); // 假设有用户登录，或用其他方式识别用户
-    const storedLikes = localStorage.getItem(`comment_likes_${identifier}`) || '[]';
-    const userLikes = new Set<string>(JSON.parse(storedLikes));
-    
-    const Like = AV.Object.extend(leanCloudLikeClassName);
-    const query = new AV.Query(leanCloudLikeClassName);
-    query.equalTo('commentId', commentId);
-    // query.equalTo('owner', user); // 精确查找该用户的点赞记录
+    if (!deviceId) return;
 
-    const existingLike = await query.first();
-
+    // 1. 乐观更新 UI，提供即时反馈
+    setComments(prevComments => 
+      prevComments.map(c => {
+        if (c.id === commentId) {
+          const isLiked = !c.isLiked;
+          const likes = c.likes + (isLiked ? 1 : -1);
+          return { ...c, isLiked, likes };
+        }
+        return c;
+      })
+    );
+    
+    // 2. 调用后端 API
     try {
-      if (existingLike) {
-        await existingLike.destroy();
-        userLikes.delete(commentId);
-      } else {
-        const newLike = new Like();
-        newLike.set('commentId', commentId);
-        // newLike.set('owner', user);
-        newLike.set(commentType === 'telegram' ? 'postId' : 'slug', identifier);
-        await newLike.save();
-        userLikes.add(commentId);
+      const response = await fetch('/api/comments/like', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              commentId,
+              commentType,
+              deviceId,
+          }),
+      });
+
+      if (!response.ok) {
+        // 如果 API 调用失败，则撤销乐观更新
+        throw new Error('Like operation failed');
       }
-      
-      localStorage.setItem(`comment_likes_${identifier}`, JSON.stringify(Array.from(userLikes)));
-      // 操作成功后，刷新评论列表以同步点赞数
-      fetchComments();
+
+      // 可选：使用从服务器返回的最终数据更新状态，以确保同步
+      const result = await response.json();
+      if (result.success) {
+          setComments(prevComments => 
+            prevComments.map(c => {
+              if (c.id === commentId) {
+                return { ...c, likes: result.likes, isLiked: result.isLiked };
+              }
+              return c;
+            })
+          );
+      }
 
     } catch (error) {
-      console.error("Like operation failed:", error);
-      // 失败时也刷新一次，以回滚到真实状态
+      console.error("Error liking comment:", error);
+      // 如果出错，重新获取评论列表以恢复到真实状态
       fetchComments();
     }
-  }, [sdkReady, identifier, commentType, leanCloudLikeClassName, fetchComments]);
+  }, [deviceId, commentType, fetchComments]);
 
-    return (
+  return (
     <div className="not-prose">
       {displayMode === 'full' && (
         <>
@@ -188,7 +187,6 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
         identifier={identifier}
         commentType={commentType}
         onCommentAdded={handleCommentAdded}
-        sdkReady={sdkReady}
         displayMode={displayMode}
         loading={loading}
       />
@@ -201,9 +199,9 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
       />
       
       {displayMode === 'full' && (
-       <div className="mt-6 text-sm text-right">
-        本评论区由 <a href="https://github.com/EveSunMaple" className="text-primary"> EveSunMaple </a> 自主开发
-      </div>
+        <div className="mt-6 text-sm text-right">
+         本评论区由 <a href="https://github.com/EveSunMaple" className="text-primary" target="_blank" rel="noopener noreferrer"> EveSunMaple </a> 自主开发
+       </div>
       )}
     </div>
   );

@@ -1,27 +1,22 @@
+// src/components/comments/LoginForm.tsx
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@/hooks/useUser';
 
-// 定义敏感用户列表（不区分大小写）
-// 这个列表是公开的，只用于触发密码输入，所以放在前端是安全的
+// 这个敏感用户列表现在只在前端用于UI判断，真正的安全校验在后端
 const SENSITIVE_USERS = ['evesunmaple', 'EveSunMaple', 'sunmaple', 'SunMaple', 'admin', '博主', 'evesunmaple@outlook.com'];
 
 const LoginForm: React.FC = () => {
-  const { saveUser } = useUser();
+  // 使用我们新的 useUser hook，获取访客保存函数
+  const { saveGuestUser } = useUser();
+  
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
-  const [redirectUrl, setRedirectUrl] = useState('/');
-
-  // --- 新增状态 ---
-  // 用于存储需要输入的密码
   const [password, setPassword] = useState('');
-  // 控制密码输入框是否显示
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
-  // 用于显示错误信息
   const [error, setError] = useState('');
-  // 用于防止重复提交
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [redirectUrl, setRedirectUrl] = useState('/');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -29,69 +24,64 @@ const LoginForm: React.FC = () => {
     if (redirect) setRedirectUrl(redirect);
   }, []);
 
-  // --- 新增逻辑：当昵称或邮箱输入变化时，检查是否为敏感词 ---
   useEffect(() => {
-    const checkSensitive = () => {
-      const lowerNickname = nickname.trim().toLowerCase();
-      const lowerEmail = email.trim().toLowerCase();
-
-      // 如果昵称或邮箱在敏感列表中，则要求输入密码
-      if (SENSITIVE_USERS.includes(lowerNickname) || SENSITIVE_USERS.includes(lowerEmail)) {
-        setIsPasswordRequired(true);
-      } else {
-        setIsPasswordRequired(false);
-        setPassword(''); // 如果不再是敏感用户，清空密码
-      }
-    };
-    checkSensitive();
+    const lowerNickname = nickname.trim().toLowerCase();
+    const lowerEmail = email.trim().toLowerCase();
+    if (SENSITIVE_USERS.includes(lowerNickname) || SENSITIVE_USERS.includes(lowerEmail)) {
+      setIsPasswordRequired(true);
+    } else {
+      setIsPasswordRequired(false);
+      setPassword('');
+    }
   }, [nickname, email]);
 
-
-  // --- 修改逻辑：处理表单提交 ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nickname || !email) return;
-
-    // 清空之前的错误信息
+    if (!nickname || !email) {
+        setError('昵称和邮箱不能为空');
+        return;
+    }
+    
     setError('');
     setIsSubmitting(true);
 
-    // 如果需要密码验证
-    if (isPasswordRequired) {
-      if (!password) {
-        setError('请输入管理员密码。');
-        setIsSubmitting(false);
-        return;
-      }
-
-      try {
-        // 调用我们创建的后端 API
+    try {
+        // 不论是否为管理员，我们都调用后端API
+        // 后端会根据昵称和邮箱判断是否需要验证密码
         const response = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password }),
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            // --- 核心修改点 1: 发送所有需要的数据 ---
+            body: JSON.stringify({
+                nickname,
+                email,
+                password, // 如果是普通用户，这里会是空字符串，后端不在意
+            }),
         });
 
         const data = await response.json();
 
         if (response.ok && data.success) {
-          // 密码正确，保存用户信息并跳转
-          saveUser({ nickname, email, website });
-          window.location.href = redirectUrl;
+            // --- 核心修改点 2: 区分处理 ---
+            if (data.isAdmin) {
+                // 如果是管理员，后端已经设置了HttpOnly cookie
+                // 我们直接跳转即可，useUser hook 在下一页会自动识别管理员身份
+                window.location.href = redirectUrl;
+            } else {
+                // 如果是普通用户（访客）
+                // 使用新的 saveGuestUser 方法将信息保存在本地
+                saveGuestUser({ nickname, email, website });
+                // 然后跳转
+                window.location.href = redirectUrl;
+            }
         } else {
-          // 密码错误，显示错误信息
-          setError(data.message || '验证失败，请重试。');
+            // 登录失败，显示后端返回的错误信息
+            setError(data.message || '验证失败，请重试。');
         }
-      } catch (err) {
+    } catch (err) {
         setError('网络错误，请稍后重试。');
-      } finally {
+    } finally {
         setIsSubmitting(false);
-      }
-
-    } else {
-      // 如果不需要密码，直接保存并跳转
-      saveUser({ nickname, email, website });
-      window.location.href = redirectUrl;
     }
   };
 
@@ -146,7 +136,6 @@ const LoginForm: React.FC = () => {
             />
           </div>
           
-          {/* --- 新增元素：条件渲染密码输入框 --- */}
           {isPasswordRequired && (
             <div className="form-control transition-all duration-300 animate-fade-in">
               <label className="label font-medium text-base-content mb-2">管理员密码<span className="text-error ml-0.5">*</span></label>
@@ -162,7 +151,6 @@ const LoginForm: React.FC = () => {
           )}
         </div>
 
-        {/* --- 新增元素：显示错误信息 --- */}
         {error && (
           <div className="text-error text-sm text-center animate-shake">
             {error}
@@ -170,7 +158,7 @@ const LoginForm: React.FC = () => {
         )}
 
         <div className="flex justify-end pt-4">
-          <button type="submit" className={`btn btn-primary gap-1 ${isSubmitting ? 'loading' : ''}`} disabled={isSubmitting}>
+          <button type="submit" className={`btn btn-primary rounded-lg gap-1 ${isSubmitting ? 'loading' : ''}`} disabled={isSubmitting}>
             {isSubmitting ? '处理中...' : '保存并返回'}
             <i className="ri-arrow-right-line" />
           </button>

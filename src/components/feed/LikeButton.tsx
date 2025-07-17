@@ -1,55 +1,17 @@
+// src/components/feed/LikeButton.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import * as AV from "leancloud-storage";
 
-// 1. 将初始化逻辑和 SDK 实例完全封装在组件文件内部
-let sdkInitPromise: Promise<boolean> | null = null;
-
-const initializeSDK = (): Promise<boolean> => {
- // 如果在非浏览器环境，直接返回失败
- if (typeof window === 'undefined') return Promise.resolve(false);
- 
- // 如果已存在初始化任务，直接返回该任务，确保全局只执行一次
- if (sdkInitPromise) return sdkInitPromise;
-
- sdkInitPromise = new Promise<boolean>((resolve) => {
-  try {
-   // 如果已初始化（例如被其他组件如评论区抢先初始化），直接成功
-   if (AV.applicationId) {
-    resolve(true);
-    return;
-   }
-   
-   const { PUBLIC_LEANCLOUD_APP_ID, PUBLIC_LEANCLOUD_APP_KEY, PUBLIC_LEANCLOUD_SERVER_URL } = import.meta.env;
-   if (PUBLIC_LEANCLOUD_APP_ID && PUBLIC_LEANCLOUD_APP_KEY && PUBLIC_LEANCLOUD_SERVER_URL) {
-    AV.init({
-     appId: PUBLIC_LEANCLOUD_APP_ID,
-     appKey: PUBLIC_LEANCLOUD_APP_KEY,
-     serverURL: PUBLIC_LEANCLOUD_SERVER_URL,
-    });
-    console.log("LeanCloud SDK Initialized by a component.");
-    resolve(true);
-   } else {
-    console.error("LikeButton: LeanCloud credentials not set.");
-    resolve(false);
-   }
-  } catch (error) {
-   console.error("LikeButton: SDK Init Error:", error);
-   resolve(false);
+// 获取或生成唯一的设备ID
+const getDeviceId = (): string => {
+  if (typeof window === 'undefined') return 'ssr-user';
+  const key = 'comment_device_id'; // 复用评论的设备ID
+  let deviceId = localStorage.getItem(key);
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem(key, deviceId);
   }
- });
- return sdkInitPromise;
+  return deviceId;
 };
-
-const getAnonymousId = (): string => {
- if (typeof window === 'undefined') return 'ssr-user';
- let anonId = localStorage.getItem('anonymous_id');
- if (!anonId) {
-  anonId = `anon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-  localStorage.setItem('anonymous_id', anonId);
- }
- return anonId;
-};
-
 
 interface Props {
   postId: string;
@@ -60,106 +22,85 @@ const LikeButton: React.FC<Props> = ({ postId }) => {
   const [hasLiked, setHasLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [sdkReady, setSdkReady] = useState(false);
+  
+  const storageKey = `liked_feed_posts`; // 使用独立的 key
 
-  const storageKey = `liked_posts`;
-
+  // 挂载时从后端获取初始状态
   useEffect(() => {
     let isMounted = true;
+    const deviceId = getDeviceId();
 
-    const run = async () => {
-      const isReady = await initializeSDK();
-      if (!isMounted) return;
-      
-      setSdkReady(isReady);
-      if (!isReady) {
-        setIsLoading(false);
-        return;
-      }
-
-      // --- 关键改动 1: 修改数据获取逻辑 ---
-      // 从查询多条记录的 count，变为查询单条记录的 likes 字段
+    const fetchInitialState = async () => {
       try {
-        const query = new AV.Query("PostLikes"); // 查询新的 PostLikes Class
-        query.equalTo("postId", postId);
-        const postStats = await query.first(); // 获取该 postId 对应的唯一记录
-
+        const response = await fetch(`/api/like?postId=${postId}&deviceId=${deviceId}`);
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
         if (isMounted) {
-          if (postStats) {
-            setLikeCount(postStats.get('likes') || 0); // 设置点赞数为记录中的 likes 值
-          } else {
-            setLikeCount(0); // 如果记录不存在，点赞数为 0
-          }
+          setLikeCount(data.likeCount);
+          setHasLiked(data.hasLiked);
         }
       } catch (error) {
         console.error(`Failed to fetch likes for post ${postId}:`, error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
+        // 如果API失败，可以尝试从本地存储恢复
+        const likedPosts = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        if (isMounted && likedPosts.includes(postId)) {
+            setHasLiked(true);
         }
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     };
 
-    run();
-
-    // 本地状态的读取逻辑保持不变
-    const likedPosts = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    if (likedPosts.includes(postId)) {
-      setHasLiked(true);
-    }
+    fetchInitialState();
 
     return () => { isMounted = false; }
   }, [postId]);
 
   const handleClick = async () => {
-    if (isSubmitting || !sdkReady) return;
+    if (isSubmitting || isLoading) return;
+    
     setIsSubmitting(true);
     const newLikedState = !hasLiked;
+    const deviceId = getDeviceId();
 
-    // 乐观更新 UI (保持不变)
+    // 1. 乐观更新 UI
     setHasLiked(newLikedState);
-    setLikeCount(prevCount => (newLikedState ? prevCount + 1 : Math.max(0, prevCount - 1)));
+    setLikeCount(prev => newLikedState ? prev + 1 : Math.max(0, prev - 1));
 
-    // 更新本地存储 (保持不变)
+    // 2. 更新本地存储
     const likedPosts = new Set<string>(JSON.parse(localStorage.getItem(storageKey) || '[]'));
     if (newLikedState) likedPosts.add(postId);
     else likedPosts.delete(postId);
     localStorage.setItem(storageKey, JSON.stringify(Array.from(likedPosts)));
-    
-    // --- 关键改动 2: 修改后台数据同步逻辑 ---
-    // 从创建/删除记录，变为增加/减少计数值
+
+    // 3. 调用后端 API
     try {
-      const query = new AV.Query("PostLikes");
-      query.equalTo("postId", postId);
-      let postStats = await query.first();
+      const response = await fetch('/api/like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, deviceId }),
+      });
+      
+      if (!response.ok) throw new Error('API request failed');
 
-      // 如果记录不存在，并且是点赞操作，则创建新记录
-      if (!postStats && newLikedState) {
-        const PostLikes = AV.Object.extend("PostLikes");
-        postStats = new PostLikes();
-        postStats.set("postId", postId);
-        postStats.set("likes", 0); // 初始点赞数为 0
-      }
-
-      if (postStats) {
-        // 使用原子化操作 increment，安全地增加或减少
-        // 点赞则 +1，取消点赞则 -1
-        (postStats as AV.Object).increment("likes", newLikedState ? 1 : -1);
-        await (postStats as AV.Object).save();
+      // 可选：使用后端返回的权威数据进行最终确认
+      const data = await response.json();
+      if(data.success) {
+        setLikeCount(data.likeCount);
+        setHasLiked(data.hasLiked);
       }
 
     } catch (error) {
       console.error("Failed to submit like:", error);
-      // 回滚 UI (保持不变)
+      // 回滚 UI
       setHasLiked(!newLikedState);
-      setLikeCount(prevCount => (newLikedState ? prevCount - 1 : prevCount + 1));
+      setLikeCount(prev => newLikedState ? prev - 1 : prev + 1);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // --- 按钮渲染部分保持不变 ---
-  const buttonClasses = `btn btn-ghost btn-xs gap-1 text-base-content/60 ${hasLiked ? "text-primary" : ""}`;
+  const buttonClasses = `btn btn-ghost btn-xs rounded-lg gap-1 text-base-content/60 ${hasLiked ? "text-primary" : ""}`;
   const isDisabled = isLoading || isSubmitting;
 
   if (isLoading) {
@@ -167,7 +108,7 @@ const LikeButton: React.FC<Props> = ({ postId }) => {
       <button className={buttonClasses}>
         <span className="loading loading-spinner loading-xs"></span>
       </button>
-    )
+    );
   }
 
   return (

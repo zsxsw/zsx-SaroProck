@@ -3,23 +3,20 @@
 import Layout from "@layouts/Layout.astro";
 import TelegramLayout from "@layouts/TelegramLayout.astro";
 import FeedCard from "@components/feed/FeedCard.astro";
-import Pagination from "@components/feed/Pagination.astro"; // 1. 引入分页组件
+import Pagination from "@components/feed/Pagination.astro"; 
 import { getChannelFeed } from "@/lib/telegram";
 
-// 2. 从 URL 中获取所有分页参数
 const { searchParams } = Astro.url;
 const before = searchParams.get("before");
 const after = searchParams.get("after");
 const q = searchParams.get("q"); // 同时考虑搜索的情况
 
-// 3. 服务端获取数据，传入分页参数
 const { posts } = await getChannelFeed(Astro, {
   before: before || undefined,
   after: after || undefined,
   q: q || undefined,
 });
 
-// 4. 计算分页所需的光标和显示逻辑
 const hasPosts = posts.length > 0;
 // "更早" 的光标是当前页面最后一条消息的 ID
 const beforeCursor = hasPosts ? posts[posts.length - 1].id : null;
@@ -33,7 +30,6 @@ const showAfter = showPagination && (!!before || !!after);
 // 是否显示 "更早" 按钮？(理论上总是显示，除非没有更多数据，这里我们先默认显示)
 const showBefore = showPagination;
 
-// 5. 生成信息提示文本 (如果存在分页或搜索)
 let infoMessage = "";
 if (q) {
   infoMessage = `正在查看关于 <strong class="text-primary">“${q}”</strong> 的搜索结果。`;

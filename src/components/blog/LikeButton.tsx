@@ -1,27 +1,17 @@
+// src/components/blog/LikeButton.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import * as AV from "leancloud-storage";
 import confetti from 'canvas-confetti';
 
-// SDK 初始化逻辑与之前完全相同，无需修改
-let sdkInitPromise: Promise<boolean> | null = null;
-const initializeSDK = (): Promise<boolean> => {
-  if (typeof window === 'undefined') return Promise.resolve(false);
-  if (sdkInitPromise) return sdkInitPromise;
-  sdkInitPromise = new Promise<boolean>((resolve) => {
-    try {
-      if (AV.applicationId) { resolve(true); return; }
-      const { PUBLIC_LEANCLOUD_APP_ID, PUBLIC_LEANCLOUD_APP_KEY, PUBLIC_LEANCLOUD_SERVER_URL } = import.meta.env;
-      if (PUBLIC_LEANCLOUD_APP_ID && PUBLIC_LEANCLOUD_APP_KEY && PUBLIC_LEANCLOUD_SERVER_URL) {
-        AV.init({
-          appId: PUBLIC_LEANCLOUD_APP_ID,
-          appKey: PUBLIC_LEANCLOUD_APP_KEY,
-          serverURL: PUBLIC_LEANCLOUD_SERVER_URL,
-        });
-        resolve(true);
-      } else { resolve(false); }
-    } catch (error) { resolve(false); }
-  });
-  return sdkInitPromise;
+// 获取或生成唯一的设备ID
+const getDeviceId = (): string => {
+  if (typeof window === 'undefined') return 'ssr-user';
+  const key = 'comment_device_id'; // 复用评论的设备ID
+  let deviceId = localStorage.getItem(key);
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem(key, deviceId);
+  }
+  return deviceId;
 };
 
 interface Props {
@@ -33,113 +23,89 @@ const BlogLikeButton: React.FC<Props> = ({ postId }) => {
   const [hasLiked, setHasLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [sdkReady, setSdkReady] = useState(false);
-  
   const [isClicked, setIsClicked] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
-
-  const storageKey = `liked_posts`;
+  
+  const storageKey = `liked_blog_posts`; // 使用独立的 key
 
   useEffect(() => {
     let isMounted = true;
-    const run = async () => {
-      const isReady = await initializeSDK();
-      if (!isMounted) return;
-      setSdkReady(isReady);
-      if (!isReady) { setIsLoading(false); return; }
+    const deviceId = getDeviceId();
 
+    const fetchInitialState = async () => {
       try {
-        const query = new AV.Query("PostLikes");
-        query.equalTo("postId", postId);
-        const postStats = await query.first();
+        const response = await fetch(`/api/like?postId=${postId}&deviceId=${deviceId}`);
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
         if (isMounted) {
-          setLikeCount(postStats?.get('likes') || 0);
+          setLikeCount(data.likeCount);
+          setHasLiked(data.hasLiked);
         }
       } catch (error) {
         console.error(`Failed to fetch likes for post ${postId}:`, error);
+        const likedPosts = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        if (isMounted && likedPosts.includes(postId)) {
+            setHasLiked(true);
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }
     };
 
-    run();
-
-    const likedPosts = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    if (likedPosts.includes(postId)) {
-      setHasLiked(true);
-    }
+    fetchInitialState();
 
     return () => { isMounted = false; }
   }, [postId]);
 
   const handleClick = async () => {
-    if (isSubmitting || !sdkReady || isLoading) return;
+    if (isSubmitting || isLoading) return;
     
     setIsSubmitting(true);
     const newLikedState = !hasLiked;
+    const deviceId = getDeviceId();
 
-    // 乐观更新 UI
     setHasLiked(newLikedState);
-    setLikeCount(prevCount => (newLikedState ? prevCount + 1 : Math.max(0, prevCount - 1)));
-    
+    setLikeCount(prev => newLikedState ? prev + 1 : Math.max(0, prev - 1));
+
     if (newLikedState) {
       setIsClicked(true);
-      setTimeout(() => setIsClicked(false), 400); // 动画持续时间
-
-      // 从按钮中心发射粒子
+      setTimeout(() => setIsClicked(false), 400);
       if (buttonRef.current) {
         const rect = buttonRef.current.getBoundingClientRect();
         const x = (rect.left + rect.right) / 2 / window.innerWidth;
         const y = (rect.top + rect.bottom) / 2 / window.innerHeight;
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { x, y },
-          colors: ['#fb7185', '#fda4af', '#ffedd5']
-        });
+        confetti({ particleCount: 100, spread: 70, origin: { x, y }, colors: ['#fb7185', '#fda4af', '#ffedd5'] });
       }
     }
     
-    // 更新本地存储
     const likedPosts = new Set<string>(JSON.parse(localStorage.getItem(storageKey) || '[]'));
     if (newLikedState) likedPosts.add(postId);
     else likedPosts.delete(postId);
     localStorage.setItem(storageKey, JSON.stringify(Array.from(likedPosts)));
-    
-    // 后台同步逻辑与之前相同
+
     try {
-      const query = new AV.Query("PostLikes");
-      query.equalTo("postId", postId);
-      let postStats = await query.first();
-
-      if (!postStats && newLikedState) {
-        const PostLikes = AV.Object.extend("PostLikes");
-        postStats = new PostLikes();
-        postStats.set("postId", postId);
-        postStats.set("likes", 0);
-      }
-
-      if (postStats) {
-        (postStats as AV.Object).increment("likes", newLikedState ? 1 : -1);
-        await (postStats as AV.Object).save();
+      const response = await fetch('/api/like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, deviceId }),
+      });
+      if (!response.ok) throw new Error('API request failed');
+      const data = await response.json();
+      if(data.success) {
+        setLikeCount(data.likeCount);
+        setHasLiked(data.hasLiked);
       }
     } catch (error) {
       console.error("Failed to submit like:", error);
-      // 回滚 UI
       setHasLiked(!newLikedState);
-      setLikeCount(prevCount => (newLikedState ? prevCount - 1 : prevCount + 1));
+      setLikeCount(prev => newLikedState ? prev - 1 : prev + 1);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const buttonStateClasses = hasLiked
-    ? 'btn-primary ring-primary/40' // 已点赞样式
-    : 'border-base-content/20'; // 未点赞样式
-
-  if (isLoading) {
-    return <div className="skeleton w-32 h-16 rounded-full"></div>
-  }
+  const buttonStateClasses = hasLiked ? 'btn-primary ring-primary/40' : 'border-base-content/20';
+  if (isLoading) return <div className="skeleton w-32 h-16 rounded-full"></div>;
 
   return (
     <button
