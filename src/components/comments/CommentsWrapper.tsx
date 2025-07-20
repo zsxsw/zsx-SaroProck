@@ -1,7 +1,7 @@
 // src/components/comments/CommentsWrapper.tsx
-import React, { useState, useEffect, useCallback } from "react";
-import CommentList from "./CommentList";
+import React, { useCallback, useEffect, useState } from "react";
 import CommentForm from "./CommentForm";
+import CommentList from "./CommentList";
 
 // 接口定义保持不变
 export interface CommentData {
@@ -17,7 +17,7 @@ export interface CommentData {
   parent?: { objectId: string };
   parentId?: string;
   level: number;
-  commentType: 'blog' | 'telegram';
+  commentType: "blog" | "telegram";
   identifier: string;
   isAdmin?: boolean;
 }
@@ -25,21 +25,21 @@ export interface CommentData {
 interface Props {
   identifier: string;
   commentType: "telegram" | "blog";
-  displayMode?: 'full' | 'compact';
+  displayMode?: "full" | "compact";
 }
 
 // 获取或生成一个唯一的设备ID，用于点赞身份识别
 const getDeviceId = (): string => {
-    const key = 'comment_device_id';
-    let deviceId = localStorage.getItem(key);
-    if (!deviceId) {
-        deviceId = crypto.randomUUID();
-        localStorage.setItem(key, deviceId);
-    }
-    return deviceId;
+  const key = "comment_device_id";
+  let deviceId = localStorage.getItem(key);
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem(key, deviceId);
+  }
+  return deviceId;
 };
 
-const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode = 'full' }) => {
+const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode = "full" }) => {
   const [comments, setComments] = useState<CommentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [deviceId, setDeviceId] = useState<string | null>(null);
@@ -50,17 +50,19 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
   }, []);
 
   const fetchComments = useCallback(async () => {
-    if (!deviceId) return; // 确保在有 deviceId 后再获取评论
+    if (!deviceId)
+      return; // 确保在有 deviceId 后再获取评论
     setLoading(true);
     try {
       const url = `/api/comments?identifier=${encodeURIComponent(identifier)}&commentType=${commentType}&deviceId=${deviceId}`;
       const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch comments');
-      
+      if (!response.ok)
+        throw new Error("Failed to fetch comments");
+
       const results = await response.json();
 
       const commentMap = new Map<string, CommentData & { children: CommentData[] }>();
-      
+
       results.forEach((c: any) => {
         const commentId = c.id || c.objectId; // 兼容
         commentMap.set(commentId, {
@@ -76,19 +78,20 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
           parentId: c.parent?.objectId,
           level: 0,
           children: [],
-          commentType: commentType,
-          identifier: identifier,
+          commentType,
+          identifier,
           isAdmin: c.isAdmin || false,
         });
       });
-      
+
       const rootComments: (CommentData & { children: CommentData[] })[] = [];
-      commentMap.forEach(comment => {
+      commentMap.forEach((comment) => {
         if (comment.parentId && commentMap.has(comment.parentId)) {
           const parent = commentMap.get(comment.parentId)!;
           comment.level = parent.level + 1;
           parent.children.push(comment);
-        } else {
+        }
+        else {
           rootComments.push(comment);
         }
       });
@@ -103,17 +106,18 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
       rootComments.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).forEach(flatten);
 
       setComments(flattenedComments);
-
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error fetching comments:", error);
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
   }, [identifier, commentType, deviceId]);
 
   useEffect(() => {
-    if(deviceId) { // 确保 deviceId 存在时才执行
-        fetchComments();
+    if (deviceId) { // 确保 deviceId 存在时才执行
+      fetchComments();
     }
   }, [deviceId, fetchComments]);
 
@@ -124,51 +128,52 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
   }, [fetchComments]);
 
   const handleLike = useCallback(async (commentId: string) => {
-    if (!deviceId) return;
+    if (!deviceId)
+      return;
 
     // 1. 乐观更新 UI，提供即时反馈
-    setComments(prevComments => 
-      prevComments.map(c => {
+    setComments(prevComments =>
+      prevComments.map((c) => {
         if (c.id === commentId) {
           const isLiked = !c.isLiked;
           const likes = c.likes + (isLiked ? 1 : -1);
           return { ...c, isLiked, likes };
         }
         return c;
-      })
+      }),
     );
-    
+
     // 2. 调用后端 API
     try {
-      const response = await fetch('/api/comments/like', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-              commentId,
-              commentType,
-              deviceId,
-          }),
+      const response = await fetch("/api/comments/like", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          commentId,
+          commentType,
+          deviceId,
+        }),
       });
 
       if (!response.ok) {
         // 如果 API 调用失败，则撤销乐观更新
-        throw new Error('Like operation failed');
+        throw new Error("Like operation failed");
       }
 
       // 可选：使用从服务器返回的最终数据更新状态，以确保同步
       const result = await response.json();
       if (result.success) {
-          setComments(prevComments => 
-            prevComments.map(c => {
-              if (c.id === commentId) {
-                return { ...c, likes: result.likes, isLiked: result.isLiked };
-              }
-              return c;
-            })
-          );
+        setComments(prevComments =>
+          prevComments.map((c) => {
+            if (c.id === commentId) {
+              return { ...c, likes: result.likes, isLiked: result.isLiked };
+            }
+            return c;
+          }),
+        );
       }
-
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error liking comment:", error);
       // 如果出错，重新获取评论列表以恢复到真实状态
       fetchComments();
@@ -177,9 +182,12 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
 
   return (
     <div className="not-prose">
-      {displayMode === 'full' && (
+      {displayMode === "full" && (
         <>
-          <h2 className="text-2xl font-bold mb-8 flex items-center gap-2"><i className="ri-chat-3-line"></i>评论区</h2>
+          <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
+            <i className="ri-chat-3-line"></i>
+            评论区
+          </h2>
           <div className="divider -mt-2 mb-6"></div>
         </>
       )}
@@ -190,18 +198,22 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
         displayMode={displayMode}
         loading={loading}
       />
-      <CommentList 
-        comments={comments} 
+      <CommentList
+        comments={comments}
         onLike={handleLike}
         onCommentAdded={handleCommentAdded}
         displayMode={displayMode}
         isLoading={loading}
       />
-      
-      {displayMode === 'full' && (
+
+      {displayMode === "full" && (
         <div className="mt-6 text-sm text-right">
-         本评论区由 <a href="https://github.com/EveSunMaple" className="text-primary" target="_blank" rel="noopener noreferrer"> EveSunMaple </a> 自主开发
-       </div>
+          本评论区由
+          {" "}
+          <a href="https://github.com/EveSunMaple" className="text-primary" target="_blank" rel="noopener noreferrer"> EveSunMaple </a>
+          {" "}
+          自主开发
+        </div>
       )}
     </div>
   );

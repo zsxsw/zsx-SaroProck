@@ -1,8 +1,7 @@
-// src/lib/telegram/api.ts
+import type { AstroGlobal } from "astro";
 import { LRUCache } from "lru-cache";
 import { $fetch } from "ofetch";
 import { ProxyAgent } from "undici";
-import type { AstroGlobal } from "astro";
 
 // 初始化缓存
 const cache = new LRUCache<string, string>({
@@ -22,12 +21,12 @@ function getEnv(Astro: any, name: string): string | undefined {
  * @returns 返回 HTML 字符串
  */
 export async function fetchTelegramHtml(
-  Astro: AstroGlobal, 
-  options: { before?: string; after?: string; q?: string; id?: string } = {}
+  Astro: AstroGlobal,
+  options: { before?: string; after?: string; q?: string; id?: string } = {},
 ): Promise<string> {
   const { before, after, q, id } = options;
   const cacheKey = JSON.stringify({ id, before, after, q });
-  
+
   if (cache.has(cacheKey)) {
     return cache.get(cacheKey)!;
   }
@@ -38,9 +37,9 @@ export async function fetchTelegramHtml(
   if (!channel) {
     throw new Error("CHANNEL environment variable is not set.");
   }
-  
-  const url = id 
-    ? `https://${host}/${channel}/${id}?embed=1&mode=tme` 
+
+  const url = id
+    ? `https://${host}/${channel}/${id}?embed=1&mode=tme`
     : `https://${host}/s/${channel}`;
 
   const proxyUrl = getEnv(Astro, "HTTP_PROXY");

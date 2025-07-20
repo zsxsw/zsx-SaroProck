@@ -25,7 +25,9 @@ import { Icon } from "astro-icon/components";
     class="search-results-dropdown hidden absolute top-full right-0 mt-2 bg-base-100/95 backdrop-blur-md border border-base-300 rounded-xl shadow-xl z-50 w-screen sm:w-[28rem] md:w-[32rem] max-w-[calc(100vw-2rem)]"
   >
     <!-- 窗口标题栏 -->
-    <div class="bg-base-200 py-3 px-4 flex items-center justify-between border-b border-base-300 rounded-xl">
+    <div
+      class="bg-base-200 py-3 px-4 flex items-center justify-between border-b border-base-300 rounded-xl"
+    >
       <div class="flex items-center gap-3">
         <Icon name="lucide:search" class="w-5 h-5 text-primary" />
         <h3 class="font-medium">搜索结果</h3>
@@ -36,12 +38,19 @@ import { Icon } from "astro-icon/components";
             <Icon name="lucide:filter" class="w-4 h-4" />
             <span>筛选</span>
           </div>
-          <div class="card dropdown-content z-[1] shadow-lg bg-base-200 rounded-xl w-72">
+          <div
+            class="card dropdown-content z-[1] shadow-lg bg-base-200 rounded-xl w-72"
+          >
             <div class="card-body p-4 gap-3">
               <h6 class="font-semibold text-base">标签</h6>
               <div class="max-h-40 overflow-y-auto pr-1" id="tag-filters">
                 <label class="flex items-center mb-2">
-                  <input type="checkbox" class="checkbox checkbox-sm checkbox-primary mr-2" value="all" checked />
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm checkbox-primary mr-2"
+                    value="all"
+                    checked
+                  />
                   <span>全部</span>
                 </label>
                 <!-- 标签将通过 JavaScript 动态加载 -->
@@ -52,7 +61,12 @@ import { Icon } from "astro-icon/components";
               <h6 class="font-semibold text-base">分类</h6>
               <div class="max-h-40 overflow-y-auto pr-1" id="category-filters">
                 <label class="flex items-center mb-2">
-                  <input type="checkbox" class="checkbox checkbox-sm checkbox-primary mr-2" value="all" checked />
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm checkbox-primary mr-2"
+                    value="all"
+                    checked
+                  />
                   <span>全部</span>
                 </label>
                 <!-- 分类将通过 JavaScript 动态加载 -->
@@ -70,7 +84,10 @@ import { Icon } from "astro-icon/components";
     </div>
 
     <!-- 搜索结果容器 -->
-    <div id="search-results" class="search-results-container p-4 max-h-[60vh] overflow-y-auto">
+    <div
+      id="search-results"
+      class="search-results-container p-4 max-h-[60vh] overflow-y-auto"
+    >
       <div class="text-base-content/70 text-center py-8">
         <Icon name="lucide:search" class="w-12 h-12 mx-auto mb-3 opacity-20" />
         <p>请输入关键词开始搜索</p>
@@ -85,11 +102,23 @@ import { Icon } from "astro-icon/components";
 
   function setupSearch() {
     const searchBar = document.getElementById("search-bar") as HTMLElement;
-    const searchInput = document.getElementById("search-input") as HTMLInputElement;
-    const searchResultsDropdown = document.getElementById("search-results-dropdown") as HTMLElement;
-    const closeSearchDropdown = document.getElementById("close-search-dropdown") as HTMLElement;
+    const searchInput = document.getElementById(
+      "search-input",
+    ) as HTMLInputElement;
+    const searchResultsDropdown = document.getElementById(
+      "search-results-dropdown",
+    ) as HTMLElement;
+    const closeSearchDropdown = document.getElementById(
+      "close-search-dropdown",
+    ) as HTMLElement;
 
-    if (!searchBar || !searchInput || !searchResultsDropdown || !closeSearchDropdown) return;
+    if (
+      !searchBar ||
+      !searchInput ||
+      !searchResultsDropdown ||
+      !closeSearchDropdown
+    )
+      return;
 
     // 初始化搜索框状态
     let isSearchExpanded = false;
@@ -195,7 +224,9 @@ import { Icon } from "astro-icon/components";
       const tagFiltersContainer = document.getElementById("tag-filters");
       if (tagFiltersContainer && tags.length) {
         // 清除现有的子元素，但保留"全部"选项
-        const allOption = tagFiltersContainer.querySelector('input[value="all"]')?.closest("label");
+        const allOption = tagFiltersContainer
+          .querySelector('input[value="all"]')
+          ?.closest("label");
         if (allOption) {
           tagFiltersContainer.innerHTML = "";
           tagFiltersContainer.appendChild(allOption);
@@ -221,10 +252,13 @@ import { Icon } from "astro-icon/components";
       }
 
       // 填充分类过滤器
-      const categoryFiltersContainer = document.getElementById("category-filters");
+      const categoryFiltersContainer =
+        document.getElementById("category-filters");
       if (categoryFiltersContainer && categories.length) {
         // 清除现有的子元素，但保留"全部"选项
-        const allOption = categoryFiltersContainer.querySelector('input[value="all"]')?.closest("label");
+        const allOption = categoryFiltersContainer
+          .querySelector('input[value="all"]')
+          ?.closest("label");
         if (allOption) {
           categoryFiltersContainer.innerHTML = "";
           categoryFiltersContainer.appendChild(allOption);
@@ -254,19 +288,23 @@ import { Icon } from "astro-icon/components";
       setupCheckboxLogic("category-filters");
 
       // 为筛选器添加变更事件
-      document.querySelectorAll("#tag-filters input, #category-filters input").forEach((checkbox) => {
-        checkbox.addEventListener("change", () => {
-          const searchInput = document.getElementById("search-input") as HTMLInputElement;
-          if (!searchInput) return;
+      document
+        .querySelectorAll("#tag-filters input, #category-filters input")
+        .forEach((checkbox) => {
+          checkbox.addEventListener("change", () => {
+            const searchInput = document.getElementById(
+              "search-input",
+            ) as HTMLInputElement;
+            if (!searchInput) return;
 
-          const query = searchInput.value.trim();
-          if (query.length >= 2) {
-            const selectedTags = getSelectedValues("tag-filters");
-            const selectedCategories = getSelectedValues("category-filters");
-            performSearch(query, selectedTags, selectedCategories);
-          }
+            const query = searchInput.value.trim();
+            if (query.length >= 2) {
+              const selectedTags = getSelectedValues("tag-filters");
+              const selectedCategories = getSelectedValues("category-filters");
+              performSearch(query, selectedTags, selectedCategories);
+            }
+          });
         });
-      });
     } catch (error) {
       console.error("Error loading tags and categories:", error);
     }
@@ -276,7 +314,9 @@ import { Icon } from "astro-icon/components";
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const allCheckbox = container.querySelector('input[value="all"]') as HTMLInputElement;
+    const allCheckbox = container.querySelector(
+      'input[value="all"]',
+    ) as HTMLInputElement;
     const otherCheckboxes = Array.from(
       container.querySelectorAll('input[type="checkbox"]:not([value="all"])'),
     ) as HTMLInputElement[];
@@ -309,15 +349,21 @@ import { Icon } from "astro-icon/components";
     const container = document.getElementById(containerId);
     if (!container) return [];
 
-    const allCheckbox = container.querySelector('input[value="all"]') as HTMLInputElement;
+    const allCheckbox = container.querySelector(
+      'input[value="all"]',
+    ) as HTMLInputElement;
     if (allCheckbox?.checked) return []; // 如果选择了"全部"，返回空数组表示不过滤
 
-    return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(
-      (cb: Element) => (cb as HTMLInputElement).value,
-    );
+    return Array.from(
+      container.querySelectorAll('input[type="checkbox"]:checked'),
+    ).map((cb: Element) => (cb as HTMLInputElement).value);
   }
 
-  async function performSearch(query: string, tags: string[], categories: string[]) {
+  async function performSearch(
+    query: string,
+    tags: string[],
+    categories: string[],
+  ) {
     const searchResults = document.getElementById("search-results");
     if (!searchResults) return;
 
@@ -424,7 +470,10 @@ import { Icon } from "astro-icon/components";
       .sort((a, b) => b.length - a.length)
       .forEach((keyword) => {
         // 转义正则表达式特殊字符
-        const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\#{content}");
+        const escapedKeyword = keyword.replace(
+          /[.*+?^${}()|[\]\\]/g,
+          "\\#{content}",
+        );
 
         // 创建正则表达式以匹配查询（不区分大小写）
         const regex = new RegExp(`(${escapedKeyword})`, "gi");

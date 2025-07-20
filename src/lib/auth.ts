@@ -1,14 +1,14 @@
+import type { APIContext } from "astro";
+import { parse, serialize } from "cookie";
 // src/lib/auth.ts
-import jwt from 'jsonwebtoken';
-import { serialize, parse } from 'cookie';
-import type { APIContext } from 'astro';
+import jwt from "jsonwebtoken";
 
 const JWT_SECRET = import.meta.env.JWT_SECRET;
-const COOKIE_NAME = 'auth_token';
+const COOKIE_NAME = "auth_token";
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 天
 
 if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET is not defined in environment variables.');
+  throw new Error("JWT_SECRET is not defined in environment variables.");
 }
 
 // 加密用户信息为 JWT
@@ -20,7 +20,9 @@ export function signJwt(payload: object): string {
 export function verifyJwt(token: string): any | null {
   try {
     return jwt.verify(token, JWT_SECRET);
-  } catch (error) {
+  }
+  catch (error) {
+    console.error("JWT verification error:", error);
     return null;
   }
 }
@@ -31,30 +33,30 @@ export function setAuthCookie(response: Response, token: string): void {
     httpOnly: true, // 关键：防止客户端脚本访问
     secure: import.meta.env.PROD, // 生产环境中使用 HTTPS
     maxAge: MAX_AGE,
-    path: '/',
-    sameSite: 'lax',
+    path: "/",
+    sameSite: "lax",
   });
-  response.headers.set('Set-Cookie', cookie);
+  response.headers.set("Set-Cookie", cookie);
 }
 
 // 清除认证 cookie
 export function clearAuthCookie(response: Response): void {
-  const cookie = serialize(COOKIE_NAME, '', {
+  const cookie = serialize(COOKIE_NAME, "", {
     maxAge: -1,
-    path: '/',
+    path: "/",
   });
-  response.headers.set('Set-Cookie', cookie);
+  response.headers.set("Set-Cookie", cookie);
 }
 
 // 从请求中获取管理员信息
 export function getAdminUser(context: APIContext): { nickname: string; email: string } | null {
-  const cookies = parse(context.request.headers.get('cookie') || '');
+  const cookies = parse(context.request.headers.get("cookie") || "");
   const token = cookies[COOKIE_NAME];
 
   if (!token) {
     return null;
   }
-  
+
   const payload = verifyJwt(token);
 
   if (payload && payload.isAdmin) {

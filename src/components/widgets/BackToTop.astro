@@ -1,7 +1,8 @@
 ---
 // src/components/widgets/BackToTop.astro
 ---
-<button 
+
+<button
   id="back-to-top-btn"
   class="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-12 h-12 bg-primary text-primary-content rounded-full shadow-lg opacity-0 pointer-events-none transform translate-y-4 transition-all duration-300 hover:scale-110 hover:shadow-xl z-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 no-print"
   aria-label="回到顶部"
@@ -19,8 +20,7 @@
           cx="24"
           cy="24"
           id="progress-circle"
-          style="stroke-linecap: round;"
-        />
+          style="stroke-linecap: round;"></circle>
       </svg>
     </div>
   </div>
@@ -34,10 +34,14 @@
     private isVisible: boolean = false;
 
     constructor() {
-      this.button = document.getElementById('back-to-top-btn') as HTMLButtonElement;
-      this.progressCircle = document.getElementById('progress-circle') as SVGCircleElement;
+      this.button = document.getElementById(
+        "back-to-top-btn",
+      ) as HTMLButtonElement;
+      this.progressCircle = document.getElementById(
+        "progress-circle",
+      ) as unknown as SVGCircleElement;
       this.circumference = 2 * Math.PI * 22;
-      
+
       this.init();
     }
 
@@ -52,29 +56,45 @@
     }
 
     private bindEvents(): void {
-      window.addEventListener('scroll', () => {
+      window.addEventListener("scroll", () => {
         this.updateVisibility();
         this.updateProgress();
       });
 
       if (this.button) {
-        this.button.addEventListener('click', () => this.scrollToTop());
+        this.button.addEventListener("click", () => this.scrollToTop());
       }
     }
 
     private updateVisibility(): void {
       const shouldShow = window.scrollY > 300;
-      
+
       if (shouldShow !== this.isVisible) {
         this.isVisible = shouldShow;
-        
+
         if (this.button) {
           if (shouldShow) {
-            this.button.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
-            this.button.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+            this.button.classList.remove(
+              "opacity-0",
+              "pointer-events-none",
+              "translate-y-4",
+            );
+            this.button.classList.add(
+              "opacity-100",
+              "pointer-events-auto",
+              "translate-y-0",
+            );
           } else {
-            this.button.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
-            this.button.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+            this.button.classList.remove(
+              "opacity-100",
+              "pointer-events-auto",
+              "translate-y-0",
+            );
+            this.button.classList.add(
+              "opacity-0",
+              "pointer-events-none",
+              "translate-y-4",
+            );
           }
         }
       }
@@ -84,23 +104,24 @@
       if (!this.progressCircle) return;
 
       const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const docHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
       const scrollPercent = scrollTop / docHeight;
-      
-      const offset = this.circumference - (scrollPercent * this.circumference);
+
+      const offset = this.circumference - scrollPercent * this.circumference;
       this.progressCircle.style.strokeDashoffset = `${offset}`;
     }
 
     private scrollToTop(): void {
       window.scrollTo({
         top: 0,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   }
 
   // 初始化回到顶部按钮
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener("DOMContentLoaded", () => {
     new BackToTop();
   });
 </script>

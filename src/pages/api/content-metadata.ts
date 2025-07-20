@@ -29,7 +29,8 @@ export const GET: APIRoute = async () => {
         "Content-Type": "application/json",
       },
     });
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Error fetching content metadata:", error);
     return new Response(
       JSON.stringify({
@@ -40,7 +41,7 @@ export const GET: APIRoute = async () => {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
-}; 
+};

@@ -12,20 +12,19 @@ async function generateShortHash(input: string): Promise<string> {
   // 使用现代的 Web Crypto API
   const encoder = new TextEncoder();
   const data = encoder.encode(input);
-  const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-  
+  const hashBuffer = await crypto.subtle.digest("SHA-1", data);
+
   // 将哈希值转换为16进制字符串
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hexHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  
+  const hexHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
   // 返回哈希值的前7位，这足以在大多数情况下保证唯一性
   return hexHash.substring(0, 7);
 }
 
-
 interface ShortLinkOptions {
   longUrl: string;
-  slug?: CollectionEntry<'blog'>['slug'];
+  slug?: CollectionEntry<"blog">["slug"];
 }
 
 export async function getShortLink({ longUrl, slug }: ShortLinkOptions): Promise<string | null> {
@@ -46,16 +45,17 @@ export async function getShortLink({ longUrl, slug }: ShortLinkOptions): Promise
   try {
     // --- 核心修复：重写请求体构建逻辑 ---
     const bodyPayload: { url: string; slug?: string } = {
-        url: longUrl,
+      url: longUrl,
     };
 
     const sinkSlugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
-    
+
     if (slug) {
       if (sinkSlugRegex.test(slug)) {
         // 如果 slug 合规（英文/数字），直接使用
         bodyPayload.slug = slug;
-      } else {
+      }
+      else {
         // 如果 slug 不合规（包含中文等），则为其生成一个固定的哈希值
         const hashedSlug = await generateShortHash(slug);
         bodyPayload.slug = hashedSlug;
@@ -64,10 +64,10 @@ export async function getShortLink({ longUrl, slug }: ShortLinkOptions): Promise
     // 如果没有传入 slug，则不发送 slug 字段，让 Sink 服务自己生成随机 slug
 
     const response = await fetch(apiEndpoint, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify(bodyPayload),
     });
@@ -78,7 +78,7 @@ export async function getShortLink({ longUrl, slug }: ShortLinkOptions): Promise
     }
 
     const data = await response.json();
-    
+
     const shortUrl = data?.shortLink;
 
     if (shortUrl) {
@@ -87,8 +87,8 @@ export async function getShortLink({ longUrl, slug }: ShortLinkOptions): Promise
       return shortUrl;
     }
     return null;
-
-  } catch (error) {
+  }
+  catch (error) {
     console.error(`Failed to get short link for ${longUrl}:`, error);
     return null;
   }

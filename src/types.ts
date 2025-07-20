@@ -2,7 +2,7 @@
 
 // 媒体文件（图片/视频）
 export interface MediaFile {
-  type: 'image' | 'video' | 'roundVideo';
+  type: "image" | "video" | "roundVideo";
   url: string; // 媒体文件链接
   thumbnail?: string; // 视频缩略图
   alt?: string; // 图片描述
@@ -51,12 +51,12 @@ export interface ChannelInfo {
 
 // Astro 全局 locals 类型（用于 SSR）
 // 这可以让你在所有组件中安全地访问环境变量
-declare module 'astro' {
+declare module "astro" {
   interface Locals {
     runtime: {
       env: {
         [key: string]: string;
-      }
-    }
+      };
+    };
   }
 }

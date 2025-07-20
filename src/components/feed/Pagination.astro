@@ -2,28 +2,24 @@
 // src/components/feed/Pagination.astro
 interface Props {
   beforeCursor?: string | null; // “更早”的光标 (最后一个帖子的 ID)
-  afterCursor?: string | null;  // “更新”的光标 (第一个帖子的 ID)
+  afterCursor?: string | null; // “更新”的光标 (第一个帖子的 ID)
   showBefore: boolean; // 是否显示“更早”按钮
-  showAfter: boolean;  // 是否显示“更新”按钮
+  showAfter: boolean; // 是否显示“更新”按钮
 }
 
-const { 
-  beforeCursor, 
-  afterCursor,
-  showBefore,
-  showAfter,
-} = Astro.props;
+const { beforeCursor, afterCursor, showBefore, showAfter } = Astro.props;
 
 // 如果光标不存在，或者不应显示，则禁用按钮
 const isOlderDisabled = !beforeCursor || !showBefore;
 const isNewerDisabled = !afterCursor || !showAfter;
 ---
+
 <nav class="flex justify-between items-center gap-4">
-  <a 
-    href={isNewerDisabled ? '#' : `/?after=${afterCursor}`}
+  <a
+    href={isNewerDisabled ? "#" : `/?after=${afterCursor}`}
     class:list={[
-      'btn btn-primary btn-sm rounded-xl sm:btn-md',
-      { 'btn-disabled': isNewerDisabled }
+      "btn btn-primary btn-sm rounded-xl sm:btn-md",
+      { "btn-disabled": isNewerDisabled },
     ]}
     aria-disabled={isNewerDisabled}
   >
@@ -32,10 +28,10 @@ const isNewerDisabled = !afterCursor || !showAfter;
   </a>
 
   <a
-    href={isOlderDisabled ? '#' : `/?before=${beforeCursor}`}
+    href={isOlderDisabled ? "#" : `/?before=${beforeCursor}`}
     class:list={[
-      'btn btn-primary btn-sm rounded-xl sm:btn-md',
-      { 'btn-disabled': isOlderDisabled }
+      "btn btn-primary btn-sm rounded-xl sm:btn-md",
+      { "btn-disabled": isOlderDisabled },
     ]}
     aria-disabled={isOlderDisabled}
   >

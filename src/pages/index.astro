@@ -3,7 +3,7 @@
 import Layout from "@layouts/Layout.astro";
 import TelegramLayout from "@layouts/TelegramLayout.astro";
 import FeedCard from "@components/feed/FeedCard.astro";
-import Pagination from "@components/feed/Pagination.astro"; 
+import Pagination from "@components/feed/Pagination.astro";
 import { getChannelFeed } from "@/lib/telegram";
 
 const { searchParams } = Astro.url;
@@ -42,36 +42,42 @@ if (q) {
 
 <Layout title="首页">
   <TelegramLayout>
-    {infoMessage && (
-      <div role="alert" class="alert rounded-xl text-sm">
-        <i class="ri-information-line"></i>
-        <span set:html={infoMessage} />
-        <a href="/" class="btn btn-ghost btn-sm ml-auto">
-          <i class="ri-arrow-go-back-line mr-1"></i>
-          返回最新
-        </a>
-      </div>
-    )}
+    {
+      infoMessage && (
+        <div role="alert" class="alert rounded-xl text-sm">
+          <i class="ri-information-line" />
+          <span set:html={infoMessage} />
+          <a href="/" class="btn btn-ghost btn-sm ml-auto">
+            <i class="ri-arrow-go-back-line mr-1" />
+            返回最新
+          </a>
+        </div>
+      )
+    }
 
-    {posts.length > 0 ? (
-      posts.map((post, index) => (
-        <FeedCard post={post} isLastItem={index === posts.length - 1} />
-      ))
-    ) : (
-      <div class="text-center text-base-content/60">
-        <i class="ri-compass-3-line text-4xl"></i>
-        <p class="mt-4">没有找到任何动态。</p>
-        {q && <p>请尝试更换搜索关键词。</p>}
-      </div>
-    )}
-    
-    {showPagination && posts.length > 0 && (
-      <Pagination 
-        beforeCursor={beforeCursor}
-        afterCursor={afterCursor}
-        showBefore={showBefore}
-        showAfter={showAfter}
-      />
-    )}
+    {
+      posts.length > 0 ? (
+        posts.map((post, index) => (
+          <FeedCard post={post} isLastItem={index === posts.length - 1} />
+        ))
+      ) : (
+        <div class="text-center text-base-content/60">
+          <i class="ri-compass-3-line text-4xl" />
+          <p class="mt-4">没有找到任何动态。</p>
+          {q && <p>请尝试更换搜索关键词。</p>}
+        </div>
+      )
+    }
+
+    {
+      showPagination && posts.length > 0 && (
+        <Pagination
+          beforeCursor={beforeCursor}
+          afterCursor={afterCursor}
+          showBefore={showBefore}
+          showAfter={showAfter}
+        />
+      )
+    }
   </TelegramLayout>
 </Layout>

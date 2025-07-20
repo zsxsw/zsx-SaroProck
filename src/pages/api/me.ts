@@ -1,6 +1,6 @@
 // src/pages/api/me.ts
-import type { APIContext } from 'astro';
-import { getAdminUser } from '@/lib/auth';
+import type { APIContext } from "astro";
+import { getAdminUser } from "@/lib/auth";
 
 export async function GET(context: APIContext): Promise<Response> {
   const adminUser = getAdminUser(context);
@@ -13,15 +13,16 @@ export async function GET(context: APIContext): Promise<Response> {
         isAdmin: true,
         nickname: adminUser.nickname,
         email: adminUser.email,
-        avatar: 'https://www.saroprock.com/avatar.webp'
+        avatar: "https://www.saroprock.com/avatar.webp",
       }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { status: 200, headers: { "Content-Type": "application/json" } },
     );
-  } else {
+  }
+  else {
     // 如果没有 token 或 token 无效，返回未登录状态
     return new Response(
       JSON.stringify({ isLoggedIn: false, isAdmin: false }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { status: 200, headers: { "Content-Type": "application/json" } },
     );
   }
 }

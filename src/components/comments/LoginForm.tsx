@@ -1,27 +1,28 @@
 // src/components/comments/LoginForm.tsx
-import React, { useState, useEffect } from 'react';
-import { useUser } from '@/hooks/useUser';
+import React, { useEffect, useState } from "react";
+import { useUser } from "@/hooks/useUser";
 
 // 这个敏感用户列表现在只在前端用于UI判断，真正的安全校验在后端
-const SENSITIVE_USERS = ['evesunmaple', 'EveSunMaple', 'sunmaple', 'SunMaple', 'admin', '博主', 'evesunmaple@outlook.com'];
+const SENSITIVE_USERS = ["evesunmaple", "EveSunMaple", "sunmaple", "SunMaple", "admin", "博主", "evesunmaple@outlook.com"];
 
 const LoginForm: React.FC = () => {
   // 使用我们新的 useUser hook，获取访客保存函数
   const { saveGuestUser } = useUser();
-  
-  const [nickname, setNickname] = useState('');
-  const [email, setEmail] = useState('');
-  const [website, setWebsite] = useState('');
-  const [password, setPassword] = useState('');
+
+  const [nickname, setNickname] = useState("");
+  const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState("");
+  const [password, setPassword] = useState("");
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [redirectUrl, setRedirectUrl] = useState('/');
+  const [redirectUrl, setRedirectUrl] = useState("/");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect');
-    if (redirect) setRedirectUrl(redirect);
+    const redirect = params.get("redirect");
+    if (redirect)
+      setRedirectUrl(redirect);
   }, []);
 
   useEffect(() => {
@@ -29,59 +30,65 @@ const LoginForm: React.FC = () => {
     const lowerEmail = email.trim().toLowerCase();
     if (SENSITIVE_USERS.includes(lowerNickname) || SENSITIVE_USERS.includes(lowerEmail)) {
       setIsPasswordRequired(true);
-    } else {
+    }
+    else {
       setIsPasswordRequired(false);
-      setPassword('');
+      setPassword("");
     }
   }, [nickname, email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nickname || !email) {
-        setError('昵称和邮箱不能为空');
-        return;
+      setError("昵称和邮箱不能为空");
+      return;
     }
-    
-    setError('');
+
+    setError("");
     setIsSubmitting(true);
 
     try {
-        // 不论是否为管理员，我们都调用后端API
-        // 后端会根据昵称和邮箱判断是否需要验证密码
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            // --- 核心修改点 1: 发送所有需要的数据 ---
-            body: JSON.stringify({
-                nickname,
-                email,
-                password, // 如果是普通用户，这里会是空字符串，后端不在意
-            }),
-        });
+      // 不论是否为管理员，我们都调用后端API
+      // 后端会根据昵称和邮箱判断是否需要验证密码
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // --- 核心修改点 1: 发送所有需要的数据 ---
+        body: JSON.stringify({
+          nickname,
+          email,
+          password, // 如果是普通用户，这里会是空字符串，后端不在意
+        }),
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (response.ok && data.success) {
-            // --- 核心修改点 2: 区分处理 ---
-            if (data.isAdmin) {
-                // 如果是管理员，后端已经设置了HttpOnly cookie
-                // 我们直接跳转即可，useUser hook 在下一页会自动识别管理员身份
-                window.location.href = redirectUrl;
-            } else {
-                // 如果是普通用户（访客）
-                // 使用新的 saveGuestUser 方法将信息保存在本地
-                saveGuestUser({ nickname, email, website });
-                // 然后跳转
-                window.location.href = redirectUrl;
-            }
-        } else {
-            // 登录失败，显示后端返回的错误信息
-            setError(data.message || '验证失败，请重试。');
+      if (response.ok && data.success) {
+        // --- 核心修改点 2: 区分处理 ---
+        if (data.isAdmin) {
+          // 如果是管理员，后端已经设置了HttpOnly cookie
+          // 我们直接跳转即可，useUser hook 在下一页会自动识别管理员身份
+          window.location.href = redirectUrl;
         }
-    } catch (err) {
-        setError('网络错误，请稍后重试。');
-    } finally {
-        setIsSubmitting(false);
+        else {
+          // 如果是普通用户（访客）
+          // 使用新的 saveGuestUser 方法将信息保存在本地
+          saveGuestUser({ nickname, email, website });
+          // 然后跳转
+          window.location.href = redirectUrl;
+        }
+      }
+      else {
+        // 登录失败，显示后端返回的错误信息
+        setError(data.message || "验证失败，请重试。");
+      }
+    }
+    catch (error) {
+      console.error("Login error:", error);
+      setError("网络错误，请稍后重试。");
+    }
+    finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -100,7 +107,10 @@ const LoginForm: React.FC = () => {
 
         <div className="space-y-4">
           <div className="form-control">
-            <label className="label font-medium text-base-content mb-2">昵称<span className="text-error ml-0.5">*</span></label>
+            <label className="label font-medium text-base-content mb-2">
+              昵称
+              <span className="text-error ml-0.5">*</span>
+            </label>
             <input
               type="text"
               value={nickname}
@@ -114,7 +124,10 @@ const LoginForm: React.FC = () => {
           </div>
 
           <div className="form-control">
-            <label className="label font-medium text-base-content mb-2">邮箱<span className="text-error ml-0.5">*</span></label>
+            <label className="label font-medium text-base-content mb-2">
+              邮箱
+              <span className="text-error ml-0.5">*</span>
+            </label>
             <input
               type="email"
               value={email}
@@ -126,7 +139,10 @@ const LoginForm: React.FC = () => {
           </div>
 
           <div className="form-control">
-            <label className="label font-medium text-base-content mb-2">网站 <span className="text-base-content/50">(可选)</span></label>
+            <label className="label font-medium text-base-content mb-2">
+              网站
+              <span className="text-base-content/50">(可选)</span>
+            </label>
             <input
               type="url"
               value={website}
@@ -135,10 +151,13 @@ const LoginForm: React.FC = () => {
               placeholder="https://your.site"
             />
           </div>
-          
+
           {isPasswordRequired && (
             <div className="form-control transition-all duration-300 animate-fade-in">
-              <label className="label font-medium text-base-content mb-2">管理员密码<span className="text-error ml-0.5">*</span></label>
+              <label className="label font-medium text-base-content mb-2">
+                管理员密码
+                <span className="text-error ml-0.5">*</span>
+              </label>
               <input
                 type="password"
                 value={password}
@@ -158,8 +177,8 @@ const LoginForm: React.FC = () => {
         )}
 
         <div className="flex justify-end pt-4">
-          <button type="submit" className={`btn btn-primary rounded-lg gap-1 ${isSubmitting ? 'loading' : ''}`} disabled={isSubmitting}>
-            {isSubmitting ? '处理中...' : '保存并返回'}
+          <button type="submit" className={`btn btn-primary rounded-lg gap-1 ${isSubmitting ? "loading" : ""}`} disabled={isSubmitting}>
+            {isSubmitting ? "处理中..." : "保存并返回"}
             <i className="ri-arrow-right-line" />
           </button>
         </div>

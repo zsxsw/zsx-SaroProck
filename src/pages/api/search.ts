@@ -1,3 +1,4 @@
+/* eslint-disable style/max-statements-per-line */
 import type { APIRoute } from "astro";
 import { remark } from "remark";
 import strip from "strip-markdown";
@@ -11,7 +12,7 @@ interface SearchQuery {
 
 interface SearchResult {
   title: string;
-  url: string; 
+  url: string;
   snippet: string;
   tags: string[];
   categories: string[];
@@ -50,8 +51,10 @@ export const POST: APIRoute = async ({ request, site }) => {
         .filter((entry) => {
           const entryTags = entry.data.tags || [];
           const entryCategories = entry.data.categories || [];
-          if (tags?.length && !tags.some(tag => entryTags.includes(tag))) return false;
-          if (categories?.length && !categories.some(cat => entryCategories.includes(cat))) return false;
+          if (tags?.length && !tags.some((tag) => entryTags.includes(tag)))
+            return false;
+          if (categories?.length && !categories.some((cat) => entryCategories.includes(cat)))
+            return false;
           return true;
         })
         .map(async (post) => {
@@ -64,19 +67,20 @@ export const POST: APIRoute = async ({ request, site }) => {
 
           for (const keyword of keywords) {
             if (title.toLowerCase().includes(keyword)) { matchScore += 100; matchDetails.title = true; }
-            if (tags.some(t => t.toLowerCase().includes(keyword))) { matchScore += 30; matchDetails.tags = true; }
-            if (categories.some(c => c.toLowerCase().includes(keyword))) { matchScore += 50; matchDetails.categories = true; }
+            if (tags.some((t) => t.toLowerCase().includes(keyword))) { matchScore += 30; matchDetails.tags = true; }
+            if (categories.some((c) => c.toLowerCase().includes(keyword))) { matchScore += 50; matchDetails.categories = true; }
             if (contentText.toLowerCase().includes(keyword)) { matchScore += 10; matchDetails.content = true; }
           }
-          
-          if (matchScore === 0) return null;
 
-          let snippet = description || '';
+          if (matchScore === 0)
+            return null;
+
+          let snippet = description || "";
           if (matchDetails.content) {
-            const contentMatchIndex = contentText.toLowerCase().indexOf(keywords.find(k => contentText.toLowerCase().includes(k)) || '');
-            if(contentMatchIndex !== -1){
-                const startIndex = Math.max(0, contentMatchIndex - 50);
-                snippet = (startIndex > 0 ? "..." : "") + contentText.substring(startIndex, startIndex + 100) + "...";
+            const contentMatchIndex = contentText.toLowerCase().indexOf(keywords.find((k) => contentText.toLowerCase().includes(k)) || "");
+            if (contentMatchIndex !== -1) {
+              const startIndex = Math.max(0, contentMatchIndex - 50);
+              snippet = `${(startIndex > 0 ? "..." : "") + contentText.substring(startIndex, startIndex + 100)}...`;
             }
           }
 
@@ -96,7 +100,7 @@ export const POST: APIRoute = async ({ request, site }) => {
       .filter((r): r is SearchResult => r !== null)
       .sort((a, b) => b.matchScore - a.matchScore || a.title.localeCompare(b.title));
 
-    const formattedResults = filteredResults.map((result) => ({
+    const formattedResults = filteredResults.map(result => ({
       ...result,
       keywords,
     }));
@@ -105,8 +109,8 @@ export const POST: APIRoute = async ({ request, site }) => {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
-
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Error performing search:", error);
     return new Response(JSON.stringify({ error: "Failed to perform search" }), { status: 500 });
   }
