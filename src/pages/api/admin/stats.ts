@@ -13,8 +13,8 @@ export async function GET(context: APIContext): Promise<Response> {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 403 });
   }
 
-  // 从环境变量中获取 Sink 配置 (已更新)
-  const sinkCountersUrl = import.meta.env.SINK_COUNTERS_URL;
+  // [修改] 从环境变量中获取 Sink 基础配置
+  const sinkBaseUrl = import.meta.env.SINK_PUBLIC_URL;
   const sinkApiKey = import.meta.env.SINK_API_KEY;
 
   try {
@@ -25,6 +25,9 @@ export async function GET(context: APIContext): Promise<Response> {
     postLikesQuery.select("likes").limit(1000);
     const blogCommentLikesQuery = new AV.Query("CommentLike");
     const telegramCommentLikesQuery = new AV.Query("TelegramCommentLike");
+
+    // [修改] 动态构建 Sink Counters URL
+    const sinkCountersUrl = sinkBaseUrl ? `${sinkBaseUrl}/api/stats/counters` : null;
 
     // 并行执行所有数据获取请求
     const [
@@ -40,7 +43,8 @@ export async function GET(context: APIContext): Promise<Response> {
       postLikesQuery.find(),
       blogCommentLikesQuery.count(),
       telegramCommentLikesQuery.count(),
-      (sinkApiKey && sinkCountersUrl) ? fetch(sinkCountersUrl, { headers: { Authorization: sinkApiKey } }) : Promise.resolve(null),
+      // [修改] 使用统一的 Bearer 认证
+      (sinkApiKey && sinkCountersUrl) ? fetch(sinkCountersUrl, { headers: { Authorization: `Bearer ${sinkApiKey}` } }) : Promise.resolve(null),
     ]);
 
     // --- 数据处理 ---

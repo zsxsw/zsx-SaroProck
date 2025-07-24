@@ -42,7 +42,8 @@ async function proxyToSinkAPI(
   try {
     const response = await fetch(targetUrl.toString(), {
       headers: {
-        Authorization: sinkApiKey,
+        // [修改] 使用统一的 Bearer 认证
+        Authorization: `Bearer ${sinkApiKey}`,
       },
     });
 
@@ -69,20 +70,20 @@ export async function GET(event: APIContext): Promise<Response> {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 403 });
   }
 
-  // 从环境变量中读取配置
+  // [修改] 从环境变量中读取基础配置
   const sinkApiKey = import.meta.env.SINK_API_KEY;
-  const sinkViewsUrl = import.meta.env.SINK_VIEWS_URL;
-  const sinkMetricsUrl = import.meta.env.SINK_METRICS_URL;
+  const sinkBaseUrl = import.meta.env.SINK_PUBLIC_URL;
 
   const url = new URL(event.request.url);
   const reportType = url.searchParams.get("report");
 
   let sinkUrl;
+  // [修改] 动态构建 Sink URL
   if (reportType === "views") {
-    sinkUrl = sinkViewsUrl;
+    sinkUrl = sinkBaseUrl ? `${sinkBaseUrl}/api/stats/views` : undefined;
   }
   else if (reportType === "metrics") {
-    sinkUrl = sinkMetricsUrl;
+    sinkUrl = sinkBaseUrl ? `${sinkBaseUrl}/api/stats/metrics` : undefined;
   }
   else {
     return new Response(JSON.stringify({ error: "Invalid report type specified." }), { status: 400 });

@@ -1,5 +1,4 @@
 import md5 from "md5";
-// src/hooks/useUser.ts
 import { useCallback, useEffect, useState } from "react";
 
 export interface User {

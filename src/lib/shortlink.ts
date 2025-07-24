@@ -33,14 +33,17 @@ export async function getShortLink({ longUrl, slug }: ShortLinkOptions): Promise
     return cache.get(cacheKey)!;
   }
 
+  // [修改] 从环境变量中获取基础配置
   const publicUrl = import.meta.env.SINK_PUBLIC_URL;
-  const apiEndpoint = import.meta.env.SINK_API_ENDPOINT;
   const apiKey = import.meta.env.SINK_API_KEY;
 
-  if (!apiEndpoint || !apiKey || !publicUrl) {
+  if (!publicUrl || !apiKey) {
     console.warn("Sink 服务环境变量未完全设置，无法生成短链。");
     return null;
   }
+
+  // [修改] 动态构建 API Endpoint
+  const apiEndpoint = `${publicUrl}/api/link/upsert`;
 
   try {
     // --- 核心修复：重写请求体构建逻辑 ---
