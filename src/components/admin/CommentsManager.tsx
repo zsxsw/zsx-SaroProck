@@ -89,7 +89,7 @@ const CommentsManager: React.FC = () => {
 
       <div className="tabs tabs-boxed mb-4">
         <a className={`tab ${commentType === "blog" ? "tab-active" : ""}`} onClick={() => handleTabClick("blog")}>博客评论</a>
-        <a className={`tab ${commentType === "telegram" ? "tab-active" : ""}`} onClick={() => handleTabClick("telegram")}>速记评论</a>
+        <a className={`tab ${commentType === "telegram" ? "tab-active" : ""}`} onClick={() => handleTabClick("telegram")}>动态评论</a>
       </div>
 
       {loading && <div className="text-center p-12"><span className="loading loading-lg"></span></div>}
