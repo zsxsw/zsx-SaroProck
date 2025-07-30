@@ -35,7 +35,6 @@ export interface TelegramPost {
   media: MediaFile[];
   linkPreview?: LinkPreview;
   reply?: Reply;
-  // 为了简化，其他属性我们用 any
   [key: string]: any;
 }
 

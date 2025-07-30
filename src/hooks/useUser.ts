@@ -27,6 +27,7 @@ export const useUser = () => {
         setUser({
           nickname: data.nickname,
           email: data.email,
+          website: data.website,
           avatar: data.avatar,
           isAdmin: true,
         });

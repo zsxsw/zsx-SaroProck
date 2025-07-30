@@ -132,8 +132,8 @@ export async function POST(context: APIContext): Promise<Response> {
       finalUser = {
         nickname: adminUser.nickname,
         email: adminUser.email,
-        website: "https://www.saroprock.com", // 您的网站
-        avatar: "https://www.saroprock.com/avatar.webp",
+        website: adminUser.website,
+        avatar: adminUser.avatar,
         isAdmin: true,
       };
     }
@@ -208,7 +208,7 @@ export async function DELETE(context: APIContext): Promise<Response> {
       const children = await query.find();
 
       for (const child of children) {
-        objectsToDelete.push(child);
+        objectsToDelete.push(child as AV.Object);
         allCommentIds.push(child.id!);
         await findChildren(child.id!); // 递归查找子评论的子评论
       }
@@ -230,11 +230,10 @@ export async function DELETE(context: APIContext): Promise<Response> {
     // 查找并删除所有相关的点赞记录
     const likeQuery = new AV.Query(leanCloudLikeClassName);
     likeQuery.containedIn("commentId", allCommentIds);
-    // LeanCloud 单次查询上限为 1000，如果点赞数可能超过，需要分页删除
     likeQuery.limit(1000);
     const likesToDelete = await likeQuery.find();
     if (likesToDelete.length > 0) {
-      await AV.Object.destroyAll(likesToDelete);
+      await AV.Object.destroyAll(likesToDelete as AV.Object[]);
     }
 
     return new Response(JSON.stringify({ success: true, message: `Deleted ${objectsToDelete.length} comment(s) and ${likesToDelete.length} like(s).` }), { status: 200 });

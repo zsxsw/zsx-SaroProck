@@ -12,8 +12,9 @@ export async function GET(context: APIContext): Promise<Response> {
         isLoggedIn: true,
         isAdmin: true,
         nickname: adminUser.nickname,
+        website: adminUser.website,
         email: adminUser.email,
-        avatar: "https://www.saroprock.com/avatar.webp",
+        avatar: adminUser.avatar,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );

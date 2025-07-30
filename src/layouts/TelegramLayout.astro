@@ -3,7 +3,7 @@
 ---
 
 <section class="flex flex-col gap-8">
-  <header class="mb-4 animate-fade-in">
+  <header class="mb-4">
     <h1 class="text-3xl font-bold flex items-center gap-3">
       <i class="ri-quill-pen-line text-primary"></i>
       <span>时光碎片</span>
@@ -17,20 +17,3 @@
     <slot />
   </div>
 </section>
-
-<style>
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .animate-fade-in {
-    animation: fade-in 0.5s ease-out forwards;
-  }
-</style>

@@ -42,7 +42,6 @@ async function proxyToSinkAPI(
   try {
     const response = await fetch(targetUrl.toString(), {
       headers: {
-        // [修改] 使用统一的 Bearer 认证
         Authorization: `Bearer ${sinkApiKey}`,
       },
     });

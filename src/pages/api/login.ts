@@ -1,5 +1,6 @@
 // src/pages/api/login.ts
 import type { APIContext } from "astro";
+import { ADMIN_USER } from "@/config";
 import { setAuthCookie, signJwt } from "@/lib/auth";
 
 export async function POST({ request }: APIContext): Promise<Response> {
@@ -26,8 +27,10 @@ export async function POST({ request }: APIContext): Promise<Response> {
     if (password === secretPassword) {
       // 密码正确，生成JWT
       const adminPayload = {
-        nickname: "EveSunMaple", // 或从请求中获取
-        email: "evesunmaple@outlook.com", // 您的管理员邮箱
+        nickname: ADMIN_USER.nickname,
+        email: ADMIN_USER.email,
+        website: ADMIN_USER.website,
+        avatar: ADMIN_USER.avatar,
         isAdmin: true,
       };
       const token = signJwt(adminPayload);

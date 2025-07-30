@@ -1,12 +1,9 @@
 // src/components/comments/LoginForm.tsx
 import React, { useEffect, useState } from "react";
+import { SENSITIVE_USERS } from "@/config";
 import { useUser } from "@/hooks/useUser";
 
-// 这个敏感用户列表现在只在前端用于UI判断，真正的安全校验在后端
-const SENSITIVE_USERS = ["evesunmaple", "EveSunMaple", "sunmaple", "SunMaple", "admin", "博主", "evesunmaple@outlook.com"];
-
 const LoginForm: React.FC = () => {
-  // 使用我们新的 useUser hook，获取访客保存函数
   const { saveGuestUser } = useUser();
 
   const [nickname, setNickname] = useState("");
@@ -53,7 +50,6 @@ const LoginForm: React.FC = () => {
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // --- 核心修改点 1: 发送所有需要的数据 ---
         body: JSON.stringify({
           nickname,
           email,
@@ -64,17 +60,11 @@ const LoginForm: React.FC = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // --- 核心修改点 2: 区分处理 ---
         if (data.isAdmin) {
-          // 如果是管理员，后端已经设置了HttpOnly cookie
-          // 我们直接跳转即可，useUser hook 在下一页会自动识别管理员身份
           window.location.href = redirectUrl;
         }
         else {
-          // 如果是普通用户（访客）
-          // 使用新的 saveGuestUser 方法将信息保存在本地
           saveGuestUser({ nickname, email, website });
-          // 然后跳转
           window.location.href = redirectUrl;
         }
       }

@@ -49,7 +49,7 @@ export function clearAuthCookie(response: Response): void {
 }
 
 // 从请求中获取管理员信息
-export function getAdminUser(context: APIContext): { nickname: string; email: string } | null {
+export function getAdminUser(context: APIContext): { nickname: string; email: string; website: string; avatar: string } | null {
   const cookies = parse(context.request.headers.get("cookie") || "");
   const token = cookies[COOKIE_NAME];
 
@@ -63,6 +63,8 @@ export function getAdminUser(context: APIContext): { nickname: string; email: st
     return {
       nickname: payload.nickname,
       email: payload.email,
+      website: payload.website,
+      avatar: payload.avatar,
     };
   }
 
