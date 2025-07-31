@@ -124,7 +124,7 @@ const CommentsManager: React.FC = () => {
                       <div dangerouslySetInnerHTML={{ __html: comment.content }} className="prose prose-sm max-w-md whitespace-normal break-all" />
                     </td>
                     <td>
-                      <a href={`/${comment.commentType === "telegram" ? "telegram" : "blog"}/${comment.identifier}`} target="_blank" rel="noopener noreferrer" className="link link-primary text-xs hover:underline">
+                      <a href={`/${comment.commentType === "telegram" ? "post" : "blog"}/${comment.identifier}`} target="_blank" rel="noopener noreferrer" className="link link-primary text-xs hover:underline">
                         {comment.identifier}
                       </a>
                     </td>
