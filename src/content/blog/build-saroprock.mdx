@@ -11,6 +11,8 @@ categories:
 draft: false
 ---
 
+import Warning from "../../components/mdx/Warning.astro";
+
 ## 前言
 
 昨天突发奇想在「NodeSeek」上面发了一篇帖子（[帖子链接](https://www.nodeseek.com/post-407852-1)），没想到第一篇就被设置为了「推荐阅读」。但是毕竟是我自己的博客而不是模板，所以并没有部署指南。惊喜之余，还是要写一篇关于如何部署我的博客的教程。部署很简单，这里我分成三个步骤，分别是：博客与动态部署 -> 评论系统 -> 短链系统。在最后，我会提供完整的 `.env` 文件。你也可以在 [GitHub 仓库](https://github.com/EveSunMaple/SaroProck/blob/main/.env.example)查看。
@@ -23,7 +25,14 @@ draft: false
 
 首先，你需要有一个 GitHub 账号以及一个 Telegram 账号，此部分不在教程范围内。
 
-其次，你需要选择一个部署平台。我的项目属于 Astro SSR，需要适配器。具有官方适配器的平台有 Vercel、Netlify、Cloudflare 等等。你可以选择其中一个进行部署。如果你选择 Vercel 部署，那么你不需要对 `astro.config.mjs` 进行修改；如果你选择 Netlify 或者 Cloudflare ，请根据 [Astro 文档](https://docs.astro.build/zh-cn/guides/on-demand-rendering/#%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%80%82%E9%85%8D%E5%99%A8)更换相对应的适配器。
+其次，你需要选择一个部署平台。我的项目属于 Astro SSR，需要适配器。具有官方适配器的平台有 Vercel、Netlify、~~Cloudflare~~ 等等。你可以选择其中一个进行部署。如果你选择 Vercel 部署，那么你不需要对 `astro.config.mjs` 进行修改；如果你选择 Netlify 或者 ~~Cloudflare~~ ，请根据 [Astro 文档](https://docs.astro.build/zh-cn/guides/on-demand-rendering/#%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%80%82%E9%85%8D%E5%99%A8)更换相对应的适配器。
+
+<Warning>
+  **注意**：Cloudflare Workers/Pages 运行在 Edge Runtime（V8 环境），并不具备完整的 Node.js API 支持。
+  由于本项目使用 Astro SSR 并依赖部分 Node API，直接部署到 Cloudflare 可能会导致构建或运行时报错（如 MessageChannel is not defined），
+  页面无法正常渲染甚至返回 404。
+  **建议** 使用 Vercel、Netlify 等具备完整 Node 运行时的平台部署。
+</Warning>
 
 最后，你需要一个公开的 Telegram 频道，在`.env`中添加变量如下：
 
