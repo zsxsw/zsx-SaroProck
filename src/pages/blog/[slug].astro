@@ -53,6 +53,8 @@ const readTime = `预计阅读 ${totalMinutes} 分钟`;
 
 const shareUrl = post.shortLink || post.longUrl;
 
+const ogImageUrl = `/api/og/${post.slug}.png`;
+
 const customComponents = {
   img: Figure,
 };
@@ -61,7 +63,7 @@ const customComponents = {
 <Layout
   title={title}
   description={description}
-  image={image}
+  image={ogImageUrl}
   headings={headings}
 >
   <article class="max-w-4xl mx-auto">
