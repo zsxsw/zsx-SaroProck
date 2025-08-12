@@ -1,20 +1,22 @@
-import type { APIContext } from "astro";
+import type { APIContext, GetStaticPaths } from "astro";
 import fs from "node:fs";
-import { getCollection } from "astro:content";
+import { type CollectionEntry, getCollection } from "astro:content";
 import satori from "satori";
 import sharp from "sharp";
 
-export async function GET({ params }: APIContext) {
+export const prerender = true;
+
+export const getStaticPaths: GetStaticPaths = async () => {
   const posts = await getCollection("blog");
-  const { slug } = params;
-  if (!slug)
-    return new Response("Slug is required", { status: 400 });
+  return posts.map(post => ({
+    params: { slug: post.slug },
+    props: { post }, // 将整篇 post 数据传递给 GET 函数
+  }));
+};
 
-  const post = posts.find(p => p.slug === slug);
-  if (!post)
-    return new Response("Post not found", { status: 404 });
-
-  // 加载字体和 favicon
+// 接收 props
+export async function GET({ props }: APIContext<{ post: CollectionEntry<"blog"> }>) {
+  const { post } = props;
   const fontRegular = fs.readFileSync("public/fonts/NotoSansSC-Regular.ttf");
   const fontBold = fs.readFileSync("public/fonts/NotoSansSC-Bold.ttf");
   const iconBuffer = fs.readFileSync("public/favicon-dark.svg");
@@ -23,9 +25,6 @@ export async function GET({ params }: APIContext) {
   const descText = post.data.description?.length > 120
     ? `${post.data.description.slice(0, 120)}…`
     : post.data.description || "";
-
-  const categories: string[] = post.data.categories || [];
-  const tags: string[] = post.data.tags || [];
 
   const template = {
     type: "div",
@@ -98,7 +97,7 @@ export async function GET({ params }: APIContext) {
           props: {
             style: { display: "flex", gap: "12px", flexWrap: "wrap" },
             children: [
-              ...categories.map(cat => ({
+              ...(post.data.categories || []).map((cat) => ({
                 type: "div",
                 props: {
                   style: {
@@ -110,7 +109,7 @@ export async function GET({ params }: APIContext) {
                   children: cat,
                 },
               })),
-              ...tags.map(tag => ({
+              ...(post.data.tags || []).map((tag) => ({
                 type: "div",
                 props: {
                   style: {
@@ -131,16 +130,9 @@ export async function GET({ params }: APIContext) {
           props: {
             width: "1200",
             height: "630",
-            style: { position: "absolute", top: 0, left: 0, zIndex: -1 },
+            style: { position: "absolute", top: 0, left: 0 },
             children: [
-              {
-                type: "rect",
-                props: {
-                  width: "100%",
-                  height: "100%",
-                  fill: "url(#grid)",
-                },
-              },
+              { type: "rect", props: { width: "100%", height: "100%", fill: "url(#grid)" } },
               {
                 type: "defs",
                 props: {
