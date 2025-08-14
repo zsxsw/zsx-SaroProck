@@ -4,7 +4,7 @@ import CommentsWrapper from "./CommentsWrapper";
 interface Props {
   identifier: string;
   commentType: "blog" | "telegram";
-  displayMode?: "full" | "compact";
+  displayMode?: "full" | "compact" | "guestbook";
 }
 
 const { identifier, commentType, displayMode = "full" } = Astro.props;

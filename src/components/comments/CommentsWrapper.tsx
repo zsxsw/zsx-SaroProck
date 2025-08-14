@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import CommentForm from "./CommentForm";
 import CommentList from "./CommentList";
 
-// 接口定义保持不变
 export interface CommentData {
   id: string;
   nickname: string;
@@ -14,9 +13,9 @@ export interface CommentData {
   avatar: string;
   likes: number;
   isLiked: boolean;
-  parent?: { objectId: string };
   parentId?: string;
   level: number;
+  children: CommentData[]; // 用于构建树形结构
   commentType: "blog" | "telegram";
   identifier: string;
   isAdmin?: boolean;
@@ -25,10 +24,9 @@ export interface CommentData {
 interface Props {
   identifier: string;
   commentType: "telegram" | "blog";
-  displayMode?: "full" | "compact";
+  displayMode?: "full" | "compact" | "guestbook";
 }
 
-// 获取或生成一个唯一的设备ID，用于点赞身份识别
 const getDeviceId = (): string => {
   const key = "comment_device_id";
   let deviceId = localStorage.getItem(key);
@@ -44,14 +42,13 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
   const [loading, setLoading] = useState(true);
   const [deviceId, setDeviceId] = useState<string | null>(null);
 
-  // 在组件挂载时获取设备ID
   useEffect(() => {
     setDeviceId(getDeviceId());
   }, []);
 
   const fetchComments = useCallback(async () => {
     if (!deviceId)
-      return; // 确保在有 deviceId 后再获取评论
+      return;
     setLoading(true);
     try {
       const url = `/api/comments?identifier=${encodeURIComponent(identifier)}&commentType=${commentType}&deviceId=${deviceId}`;
@@ -60,52 +57,61 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
         throw new Error("Failed to fetch comments");
 
       const results = await response.json();
-
-      const commentMap = new Map<string, CommentData & { children: CommentData[] }>();
+      const commentMap = new Map<string, CommentData>();
 
       results.forEach((c: any) => {
-        const commentId = c.id || c.objectId; // 兼容
+        const commentId = c.id || c.objectId;
         commentMap.set(commentId, {
+          ...c,
           id: commentId,
-          nickname: c.nickname,
-          email: c.email,
-          website: c.website,
-          content: c.content,
           createdAt: new Date(c.createdAt),
-          avatar: c.avatar,
           likes: c.likes || 0,
           isLiked: c.isLiked || false,
           parentId: c.parent?.objectId,
-          level: 0,
           children: [],
+          level: 0,
           commentType,
           identifier,
-          isAdmin: c.isAdmin || false,
         });
       });
 
-      const rootComments: (CommentData & { children: CommentData[] })[] = [];
+      const rootComments: CommentData[] = [];
       commentMap.forEach((comment) => {
         if (comment.parentId && commentMap.has(comment.parentId)) {
-          const parent = commentMap.get(comment.parentId)!;
-          comment.level = parent.level + 1;
-          parent.children.push(comment);
+          commentMap.get(comment.parentId)!.children.push(comment);
         }
         else {
           rootComments.push(comment);
         }
       });
 
-      const flattenedComments: CommentData[] = [];
-      function flatten(comment: CommentData & { children: CommentData[] }) {
-        const { children, ...rest } = comment;
-        flattenedComments.push(rest);
-        children.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-        children.forEach(flatten);
-      }
-      rootComments.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).forEach(flatten);
+      // 递归为子评论排序
+      const sortChildren = (nodes: CommentData[]) => {
+        nodes.forEach((node) => {
+          if (node.children.length > 0) {
+            node.children.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+            sortChildren(node.children);
+          }
+        });
+      };
+      sortChildren(rootComments);
 
-      setComments(flattenedComments);
+      // 如果是 guestbook 模式，我们直接使用树形结构的顶层评论
+      if (displayMode === "guestbook") {
+        rootComments.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        setComments(rootComments);
+      }
+      else {
+        // 其他模式下，扁平化处理
+        const flattenedComments: CommentData[] = [];
+        const flatten = (comment: CommentData, level: number) => {
+          const { children, ...rest } = comment;
+          flattenedComments.push({ ...rest, level } as CommentData);
+          children.forEach(child => flatten(child, level + 1));
+        };
+        rootComments.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).forEach(c => flatten(c, 0));
+        setComments(flattenedComments);
+      }
     }
     catch (error) {
       console.error("Error fetching comments:", error);
@@ -113,10 +119,10 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
     finally {
       setLoading(false);
     }
-  }, [identifier, commentType, deviceId]);
+  }, [identifier, commentType, deviceId, displayMode]);
 
   useEffect(() => {
-    if (deviceId) { // 确保 deviceId 存在时才执行
+    if (deviceId) {
       fetchComments();
     }
   }, [deviceId, fetchComments]);
@@ -131,55 +137,83 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
     if (!deviceId)
       return;
 
-    // 1. 乐观更新 UI，提供即时反馈
-    setComments(prevComments =>
-      prevComments.map((c) => {
-        if (c.id === commentId) {
-          const isLiked = !c.isLiked;
-          const likes = c.likes + (isLiked ? 1 : -1);
-          return { ...c, isLiked, likes };
+    // 乐观更新 UI
+    const updateLikesRecursively = (nodes: CommentData[]): CommentData[] => {
+      return nodes.map((node) => {
+        if (node.id === commentId) {
+          const isLiked = !node.isLiked;
+          const likes = node.likes + (isLiked ? 1 : -1);
+          return { ...node, isLiked, likes };
         }
-        return c;
-      }),
-    );
+        if (node.children && node.children.length > 0) {
+          return { ...node, children: updateLikesRecursively(node.children) };
+        }
+        return node;
+      });
+    };
+    setComments(prevComments => updateLikesRecursively(prevComments));
 
-    // 2. 调用后端 API
     try {
       const response = await fetch("/api/comments/like", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          commentId,
-          commentType,
-          deviceId,
-        }),
+        body: JSON.stringify({ commentId, commentType, deviceId }),
       });
-
-      if (!response.ok) {
-        // 如果 API 调用失败，则撤销乐观更新
+      if (!response.ok)
         throw new Error("Like operation failed");
-      }
-
-      // 可选：使用从服务器返回的最终数据更新状态，以确保同步
-      const result = await response.json();
-      if (result.success) {
-        setComments(prevComments =>
-          prevComments.map((c) => {
-            if (c.id === commentId) {
-              return { ...c, likes: result.likes, isLiked: result.isLiked };
-            }
-            return c;
-          }),
-        );
-      }
+      // 可选: 用后端返回的数据再次更新，确保数据同步
+      // const result = await response.json();
+      // fetchComments(); // 或者直接重新获取
     }
     catch (error) {
       console.error("Error liking comment:", error);
-      // 如果出错，重新获取评论列表以恢复到真实状态
-      fetchComments();
+      fetchComments(); // 如果失败，则回滚
     }
   }, [deviceId, commentType, fetchComments]);
 
+  if (displayMode === "guestbook") {
+    return (
+      <div className="not-prose">
+        <div className="text-center mb-10">
+          <button className="btn btn-primary btn-wide rounded-lg" onClick={() => (window as any).guestbook_modal.showModal()}>
+            <i className="ri-pencil-line"></i>
+            在留言板上留下我的卡片
+          </button>
+        </div>
+
+        <dialog id="guestbook_modal" className="modal modal-bottom sm:modal-middle">
+          <div className="modal-box rounded-t-2xl sm:rounded-2xl">
+            <form method="dialog">
+              <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+            </form>
+            <h3 className="font-bold text-lg mb-4">创建新留言</h3>
+            <CommentForm
+              identifier={identifier}
+              commentType={commentType}
+              onCommentAdded={() => {
+                handleCommentAdded();
+                (window as any).guestbook_modal.close();
+              }}
+              displayMode="full"
+            />
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button>close</button>
+          </form>
+        </dialog>
+
+        <CommentList
+          comments={comments}
+          onLike={handleLike}
+          onCommentAdded={handleCommentAdded}
+          displayMode="guestbook"
+          isLoading={loading}
+        />
+      </div>
+    );
+  }
+
+  // --- 默认和紧凑模式 UI (保持不变) ---
   return (
     <div className="not-prose">
       {displayMode === "full" && (
@@ -205,12 +239,11 @@ const CommentsWrapper: React.FC<Props> = ({ identifier, commentType, displayMode
         displayMode={displayMode}
         isLoading={loading}
       />
-
       {displayMode === "full" && (
         <div className="mt-6 text-sm text-right">
           本评论区由
           {" "}
-          <a href="https://github.com/EveSunMaple" className="text-primary" target="_blank" rel="noopener noreferrer"> EveSunMaple </a>
+          <a href="https://github.com/EveSunMaple" className="text-primary" target="_blank" rel="noopener noreferrer">EveSunMaple</a>
           {" "}
           自主开发
         </div>
