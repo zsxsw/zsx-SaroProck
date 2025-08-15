@@ -111,8 +111,9 @@ const CommentItemComponent: React.FC<Props> = ({ comment, onLike, onCommentAdded
   // --- 紧凑模式 (用于卡片内的回复) ---
   if (displayMode === "compact") {
     return (
-      <div className="comment-thread-compact relative pl-2">
+      <div className="comment-thread-compact relative" style={{ paddingLeft: `${comment.level > 0 ? 1.45 : 0}rem` }}>
         <div className="flex gap-2 items-start relative">
+          {comment.level > 0 && <div className="absolute -left-3 top-1 w-4 h-4 border-l-2 border-b-2 border-base-content/10 rounded-bl-lg"></div>}
           <div className="avatar w-6 h-6 shrink-0 mt-1">
             <div className="rounded-full"><img src={proxyAvatar(comment.avatar)} alt={comment.nickname} className="w-full h-full object-cover" /></div>
           </div>
@@ -131,7 +132,7 @@ const CommentItemComponent: React.FC<Props> = ({ comment, onLike, onCommentAdded
   return (
     <div className="comment-thread relative" style={{ paddingLeft: `${comment.level > 0 ? 2 : 0}rem` }}>
       <div className="comment relative" data-comment-id={comment.id}>
-        {comment.level > 0 && <div className="absolute -left-4 top-5 w-4 h-4 border-l-2 border-b-2 border-base-content/10 rounded-bl-lg"></div>}
+        {comment.level > 0 && <div className="absolute -left-4 top-2 w-4 h-4 border-l-2 border-b-2 border-base-content/10 rounded-bl-lg"></div>}
         <div className="flex gap-4">
           <div className="avatar flex-shrink-0">
             <div className="w-10 h-10 rounded-full"><img src={proxyAvatar(comment.avatar)} alt={comment.nickname} /></div>
