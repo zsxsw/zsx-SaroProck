@@ -1,7 +1,7 @@
 // src/config.ts
 // 针对博主特定的数据
 export const ADMIN_USER = {
-  nickname: "ZSX的小站",
+  nickname: "钟神秀",
   email: "zsx@zhzsx.cn",
   website: "https://www.zhzsx.cn",
   avatar: "https://www.zhzsx.cn/avatar.png",
