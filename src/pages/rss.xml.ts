@@ -39,12 +39,12 @@ export async function GET(context: any) {
       guid: post.longUrl,
       content,
       pubDate: new Date(pubDate),
-      customData: `<dc:creator><![CDATA[サン猫の時間漂流]]></dc:creator>`,
+      customData: `<dc:creator><![CDATA[ZSX的小站]]></dc:creator>`,
     };
   }));
 
   return rss({
-    title: "サン猫の時間漂流",
+    title: "ZSX的小站",
     description: "一个孤独的地方，散落着一个人的人生碎片",
     site: context.site.toString(),
     items,
@@ -53,8 +53,8 @@ export async function GET(context: any) {
       <language>zh-CN</language>
       <atom:link href="${new URL(context.url.pathname, context.site)}" rel="self" type="application/rss+xml" />
       <image>
-        <url>${new URL("/favicon.png", context.site).toString()}</url>
-        <title>サン猫の時間漂流</title>
+        <url>${new URL("https://img.314926.xyz/images/2025/09/20/zsx-avatar.webp", context.site).toString()}</url>
+        <title>ZSX的小站</title>
         <link>${context.site}</link>
       </image>
     `,

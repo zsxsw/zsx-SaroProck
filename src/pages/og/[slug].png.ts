@@ -19,7 +19,7 @@ export async function GET({ props }: APIContext<{ post: CollectionEntry<"blog"> 
   const { post } = props;
   const fontRegular = fs.readFileSync("public/fonts/NotoSansSC-Regular.ttf");
   const fontBold = fs.readFileSync("public/fonts/NotoSansSC-Bold.ttf");
-  const iconBuffer = fs.readFileSync("public/favicon-dark.svg");
+  const iconBuffer = fs.readFileSync("https://img.314926.xyz/images/2025/09/20/zsx-avatar.webp");
   const iconBase64 = `data:image/svg+xml;base64,${iconBuffer.toString("base64")}`;
 
   const descText = post.data.description?.length > 120
@@ -58,7 +58,7 @@ export async function GET({ props }: APIContext<{ post: CollectionEntry<"blog"> 
               },
               {
                 type: "div",
-                props: { style: { fontSize: "28px", fontWeight: 600 }, children: "サン猫の時間漂流" },
+                props: { style: { fontSize: "28px", fontWeight: 600 }, children: "ZSX的小站" },
               },
             ],
           },
