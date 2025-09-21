@@ -53,7 +53,7 @@ export async function GET(context: any) {
       <language>zh-CN</language>
       <atom:link href="${new URL(context.url.pathname, context.site)}" rel="self" type="application/rss+xml" />
       <image>
-        <url>${new URL("https://img.314926.xyz/images/2025/09/20/zsx-avatar.webp", context.site).toString()}</url>
+        <url>${new URL("/avatar.png", context.site).toString()}</url>
         <title>ZSX的小站</title>
         <link>${context.site}</link>
       </image>
