@@ -14,7 +14,7 @@
   "include": [
     ".astro/types.d.ts",
     "**/*"
-  ],
+, "src/content/blog/waline-deploy-vercel.mdx"  ],
   "exclude": [
     "dist"
   ]
