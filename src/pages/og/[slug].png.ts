@@ -100,7 +100,7 @@ export async function GET({ props }: APIContext<{ post: CollectionEntry<"blog"> 
             props: {
               style: { display: "flex", gap: "12px", flexWrap: "wrap" },
               children: [
-                ...(post.data.categories || []).map(cat => ({
+                ...(post.data.categories || []).map((cat) => ({
                   type: "div",
                   props: {
                     style: {
