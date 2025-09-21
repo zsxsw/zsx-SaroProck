@@ -19,7 +19,7 @@ export async function GET({ props }: APIContext<{ post: CollectionEntry<"blog"> 
   const { post } = props;
   const fontRegular = fs.readFileSync("public/fonts/NotoSansSC-Regular.ttf");
   const fontBold = fs.readFileSync("public/fonts/NotoSansSC-Bold.ttf");
-  const iconBuffer = fs.readFileSync("/avatar.png");
+  const iconBuffer = fs.readFileSync("avatar.png");
   const iconBase64 = `data:image/svg+xml;base64,${iconBuffer.toString("base64")}`;
 
   const descText = post.data.description?.length > 120
