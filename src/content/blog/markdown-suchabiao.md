@@ -7,7 +7,6 @@ tags:
     - 总览表
 categories:
     - tech
-image: https://cdn.jsdelivr.net/gh/kmfx/tuchuang@main/img/markdown.png
 ---
 > 原文位置: https://markdown.com.cn/cheat-sheet.html#%E6%80%BB%E8%A7%88
 
